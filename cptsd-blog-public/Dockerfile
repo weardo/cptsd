@@ -39,9 +39,20 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files from standalone build
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Next.js standalone output structure:
+# - .next/standalone/ contains server.js and all dependencies
+# - .next/standalone/public/ contains public assets (if public directory exists)
+# - .next/static/ contains static assets
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Next.js standalone includes public in .next/standalone/public
+# Move it to root level if it exists, otherwise create empty directory
+RUN if [ -d "./public" ]; then \
+      echo "Public directory already exists in standalone"; \
+    else \
+      mkdir -p ./public && \
+      echo "Created empty public directory"; \
+    fi
 
 USER nextjs
 
