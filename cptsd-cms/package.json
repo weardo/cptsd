@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "mkdir -p node_modules/@cptsd && cp -r ../packages/db node_modules/@cptsd/db",
+    "postinstall": "if [ -d \"../packages/db\" ]; then mkdir -p node_modules/@cptsd && cp -r ../packages/db node_modules/@cptsd/db; fi",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

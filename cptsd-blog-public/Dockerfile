@@ -17,10 +17,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 # Copy app source
 COPY cptsd-blog-public/ .
-# Copy shared database package
+# Copy shared packages (db and pets)
 COPY packages/db ./packages/db
-# Create symlink in node_modules for @cptsd/db
-RUN mkdir -p node_modules/@cptsd && ln -sf ../../packages/db node_modules/@cptsd/db
+COPY packages/pets ./packages/pets
+# Create symlinks in node_modules for @cptsd packages
+RUN mkdir -p node_modules/@cptsd && \
+    ln -sf ../../packages/db node_modules/@cptsd/db && \
+    ln -sf ../../packages/pets node_modules/@cptsd/pets
 
 # Accept build arguments for environment variables
 ARG MONGODB_URI
@@ -50,6 +53,12 @@ RUN adduser --system --uid 1001 nextjs
 # - .next/static/ contains static assets
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Ensure packages are available at runtime
+# Copy packages directory and recreate symlinks for @cptsd packages
+COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
+RUN mkdir -p node_modules/@cptsd && \
+    ln -sf ../../packages/db node_modules/@cptsd/db && \
+    ln -sf ../../packages/pets node_modules/@cptsd/pets
 # Next.js standalone includes public in .next/standalone/public (if source has public/)
 # Move it to root level if it exists in standalone, otherwise create empty directory
 RUN if [ -d "./public" ]; then \

@@ -65,6 +65,11 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Ensure packages are available at runtime
+# Copy packages directory and recreate symlinks for @cptsd packages
+COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
+RUN mkdir -p node_modules/@cptsd && \
+    ln -sf ../../packages/db node_modules/@cptsd/db
 
 USER nextjs
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "mkdir -p node_modules/@cptsd && cp -r ../packages/db node_modules/@cptsd/db && cp -r ../packages/pets node_modules/@cptsd/pets",
+    "postinstall": "if [ -d \"../packages/db\" ] && [ -d \"../packages/pets\" ]; then mkdir -p node_modules/@cptsd && cp -r ../packages/db node_modules/@cptsd/db && cp -r ../packages/pets node_modules/@cptsd/pets; fi",
     "dev": "lsof -ti :3002 | xargs -r kill -9 2>/dev/null; sleep 1; next dev -p 3002",
     "build": "next build",
     "start": "next start -p 3002",
