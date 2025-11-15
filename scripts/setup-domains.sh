@@ -8,6 +8,7 @@ MAIN_DOMAIN="cptsd.in"
 CMS_DOMAIN="cms.cptsd.in"
 BLOG_DOMAIN="blog.cptsd.in"
 JENKINS_DOMAIN="jenkins.cptsd.in"
+STORAGE_DOMAIN="storage.cptsd.in"
 SERVER_IP="37.27.39.20"
 
 echo "🌐 Setting up domains for CPTSD applications..."
@@ -107,6 +108,41 @@ ${JENKINS_DOMAIN} {
         output file /var/log/caddy/${JENKINS_DOMAIN}.log
     }
 }
+
+# MinIO Storage (S3-compatible API)
+${STORAGE_DOMAIN} {
+    reverse_proxy localhost:9000
+    
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    
+    # CORS headers for S3 API access
+    header {
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, HEAD, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type, Content-MD5, x-amz-date"
+        Access-Control-Expose-Headers "ETag, x-amz-request-id"
+        Access-Control-Max-Age "3600"
+    }
+    
+    # Handle OPTIONS preflight requests
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        respond 204
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/${STORAGE_DOMAIN}.log
+    }
+}
 EOF
 
 # Create log directory and ensure proper permissions
@@ -118,6 +154,7 @@ touch /var/log/caddy/${MAIN_DOMAIN}.log
 touch /var/log/caddy/${CMS_DOMAIN}.log
 touch /var/log/caddy/${BLOG_DOMAIN}.log
 touch /var/log/caddy/${JENKINS_DOMAIN}.log
+touch /var/log/caddy/${STORAGE_DOMAIN}.log
 chown caddy:caddy /var/log/caddy/*.log
 chmod 644 /var/log/caddy/*.log
 
@@ -152,6 +189,11 @@ echo "      - Type: A"
 echo "      - Name: jenkins"
 echo "      - Value: $SERVER_IP"
 echo ""
+echo "   5. ${STORAGE_DOMAIN}:"
+echo "      - Type: A"
+echo "      - Name: storage"
+echo "      - Value: $SERVER_IP"
+echo ""
 echo "⏳ Wait for DNS propagation (5-30 minutes)"
 echo ""
 echo "🧪 Test domains:"
@@ -159,6 +201,7 @@ echo "   - Main: https://${MAIN_DOMAIN}"
 echo "   - CMS: https://${CMS_DOMAIN}"
 echo "   - Blog: https://${BLOG_DOMAIN}"
 echo "   - Jenkins: https://${JENKINS_DOMAIN}"
+echo "   - Storage: https://${STORAGE_DOMAIN}"
 echo ""
 echo "📊 Check status:"
 echo "   - Caddy: systemctl status caddy"
