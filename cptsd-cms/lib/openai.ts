@@ -1,14 +1,22 @@
 import OpenAI from 'openai';
 import { getTokenLimitParams } from './openaiHelpers';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('⚠️  OPENAI_API_KEY is not set. OpenAI features will not work.');
-  console.warn('   Please set OPENAI_API_KEY in .env.local');
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+    
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('⚠️  OPENAI_API_KEY is not set. OpenAI features will not work.');
+      console.warn('   Please set OPENAI_API_KEY in .env.local');
+    }
+  }
+  return openaiInstance;
 }
 
 export type GenerateContentRequest = {
@@ -48,7 +56,7 @@ export async function generateContent(request: GenerateContentRequest): Promise<
   const systemPrompt = request.systemPrompt || defaultSystemPrompt;
 
   // Generate script
-  const scriptResponse = await openai.chat.completions.create({
+  const scriptResponse = await getOpenAI().chat.completions.create({
     model: model,
     messages: [
       {
@@ -67,7 +75,7 @@ export async function generateContent(request: GenerateContentRequest): Promise<
   const script = scriptResponse.choices[0]?.message?.content || '';
 
   // Generate caption
-  const captionResponse = await openai.chat.completions.create({
+  const captionResponse = await getOpenAI().chat.completions.create({
     model: model,
     messages: [
       {
@@ -86,7 +94,7 @@ export async function generateContent(request: GenerateContentRequest): Promise<
   const caption = captionResponse.choices[0]?.message?.content || '';
 
   // Generate hashtags
-  const hashtagsResponse = await openai.chat.completions.create({
+  const hashtagsResponse = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini', // Use gpt-4o-mini for hashtags (faster, cheaper)
     messages: [
       {
