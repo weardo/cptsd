@@ -26,13 +26,15 @@ export default async function StoryDetailPage({ params }: { params: { id: string
           {story.title || 'Untitled Story'}
         </h1>
         <p className="text-gray-600 mb-6">By {story.pseudonym}</p>
-        <p className="text-sm text-gray-500 mb-8">
-          {new Date(story.createdAt).toLocaleDateString('en-IN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+        {story.createdAt && (
+          <p className="text-sm text-gray-500 mb-8">
+            {new Date(story.createdAt).toLocaleDateString('en-IN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        )}
 
         <div className="prose prose-lg max-w-none">
           <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
