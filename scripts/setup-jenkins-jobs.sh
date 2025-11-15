@@ -42,15 +42,24 @@ done
 
 # Get CSRF token
 echo "🔑 Getting CSRF token..."
-CRUMB=$(curl -s -k -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+CRUMB_RESPONSE=$(curl -s -k -u "$JENKINS_USER:$JENKINS_PASSWORD" \
     "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
 
-if [ -n "$CRUMB" ]; then
-    CRUMB_FIELD=$(echo "$CRUMB" | cut -d: -f1)
-    CRUMB_VALUE=$(echo "$CRUMB" | cut -d: -f2)
-    echo "✅ CSRF token obtained"
+if [ -n "$CRUMB_RESPONSE" ] && [ "$CRUMB_RESPONSE" != "null" ]; then
+    # Response format is "Jenkins-Crumb:value" or "Jenkins-Crumb=value"
+    if echo "$CRUMB_RESPONSE" | grep -q ":"; then
+        CRUMB_FIELD=$(echo "$CRUMB_RESPONSE" | cut -d: -f1)
+        CRUMB_VALUE=$(echo "$CRUMB_RESPONSE" | cut -d: -f2-)
+    elif echo "$CRUMB_RESPONSE" | grep -q "="; then
+        CRUMB_FIELD=$(echo "$CRUMB_RESPONSE" | cut -d= -f1)
+        CRUMB_VALUE=$(echo "$CRUMB_RESPONSE" | cut -d= -f2-)
+    else
+        CRUMB_FIELD="Jenkins-Crumb"
+        CRUMB_VALUE="$CRUMB_RESPONSE"
+    fi
+    echo "✅ CSRF token obtained: $CRUMB_FIELD=$CRUMB_VALUE"
 else
-    echo "⚠️  Could not get CSRF token, continuing without it..."
+    echo "⚠️  Could not get CSRF token, trying without it..."
     CRUMB_FIELD=""
     CRUMB_VALUE=""
 fi
@@ -160,30 +169,58 @@ create_job() {
 EOF
 
     # Create or update job with CSRF token
-    CURL_CMD="curl -s -k -X POST -u \"$JENKINS_USER:$JENKINS_PASSWORD\" \
-        --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
-        -H \"Content-Type: text/xml\""
-    
-    if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
-        CURL_CMD="$CURL_CMD -H \"$CRUMB_FIELD: $CRUMB_VALUE\""
-    fi
-    
     if [ "$UPDATE_MODE" = true ]; then
-        CURL_CMD="$CURL_CMD \"$JENKINS_URL/job/$JOB_NAME/config.xml\""
+        # Update existing job
+        if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
+            HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
+                -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+                -H "$CRUMB_FIELD: $CRUMB_VALUE" \
+                --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
+                -H "Content-Type: text/xml" \
+                "$JENKINS_URL/job/$JOB_NAME/config.xml")
+        else
+            HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
+                -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+                --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
+                -H "Content-Type: text/xml" \
+                "$JENKINS_URL/job/$JOB_NAME/config.xml")
+        fi
     else
-        CURL_CMD="$CURL_CMD \"$JENKINS_URL/createItem?name=$JOB_NAME\""
+        # Create new job
+        if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
+            HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
+                -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+                -H "$CRUMB_FIELD: $CRUMB_VALUE" \
+                --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
+                -H "Content-Type: text/xml" \
+                "$JENKINS_URL/createItem?name=$JOB_NAME")
+        else
+            HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
+                -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+                --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
+                -H "Content-Type: text/xml" \
+                "$JENKINS_URL/createItem?name=$JOB_NAME")
+        fi
     fi
     
-    eval $CURL_CMD > /dev/null
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Job $JOB_NAME created/updated successfully"
+    # Check response
+    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "302" ]; then
+        echo "✅ Job $JOB_NAME created/updated successfully (HTTP $HTTP_CODE)"
+        # Verify job exists
+        sleep 1
+        if curl -s -k -f -u "$JENKINS_USER:$JENKINS_PASSWORD" "$JENKINS_URL/job/$JOB_NAME/api/json" > /dev/null 2>&1; then
+            echo "   ✅ Verified: Job exists in Jenkins"
+        else
+            echo "   ⚠️  Warning: Job may not be visible yet"
+        fi
     else
-        echo "⚠️  Job creation may have failed. Check Jenkins UI to verify."
+        echo "❌ Failed to create/update job $JOB_NAME (HTTP $HTTP_CODE)"
+        echo "   Response: $(cat /tmp/jenkins-response-${JOB_NAME}.txt 2>/dev/null | head -20)"
+        rm -f /tmp/jenkins-job-${JOB_NAME}.xml /tmp/jenkins-response-${JOB_NAME}.txt
+        return 1
     fi
     
-    echo "✅ Job $JOB_NAME created/updated"
-    rm -f /tmp/jenkins-job-${JOB_NAME}.xml
+    rm -f /tmp/jenkins-job-${JOB_NAME}.xml /tmp/jenkins-response-${JOB_NAME}.txt
 }
 
 # Create jobs
