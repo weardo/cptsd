@@ -34,34 +34,12 @@ pipeline {
                     script {
                         echo "Building ${APP_NAME} Docker image..."
                         sh """
-                            # Load environment variables from .env or .env.local files
-                            # Priority: repository .env.local > repository .env > deployment .env > Jenkins env vars
-                            ENV_FILE=""
-                            
-                            if [ -f .env.local ]; then
-                                ENV_FILE=".env.local"
-                                echo "Loading environment variables from .env.local (repository)"
-                            elif [ -f .env ]; then
-                                ENV_FILE=".env"
-                                echo "Loading environment variables from .env (repository)"
-                            elif [ -f ${DEPLOY_PATH}/.env ]; then
-                                ENV_FILE="${DEPLOY_PATH}/.env"
-                                echo "Loading environment variables from ${DEPLOY_PATH}/.env (deployment directory)"
-                            else
-                                echo "No .env file found. Using Jenkins environment variables if set"
-                            fi
-                            
-                            if [ -n "\$ENV_FILE" ]; then
-                                set -a
-                                . "\$ENV_FILE"
-                                set +a
-                            fi
+                            # Use environment variables from Jenkins Global Properties
+                            # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
+                            # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
                             
                             # Export environment variables for docker-compose build
-                            # These will use values from .env file if loaded, otherwise from Jenkins environment variables
-                            # Jenkins environment variables are set via:
-                            #   - Global Properties: Manage Jenkins → Configure System → Global properties → Environment variables
-                            #   - Job Parameters: Job → Configure → This project is parameterized → Add String Parameters
+                            # Jenkins Global Properties are already available as environment variables
                             export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
                             export MONGODB_URI=\${MONGODB_URI:-}
                             export S3_ENDPOINT=\${S3_ENDPOINT:-}
@@ -74,7 +52,7 @@ pipeline {
                             export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
                             
                             # Show which variables are set (mask secrets)
-                            echo "Environment variables check:"
+                            echo "Environment variables check (from Jenkins Global Properties):"
                             echo "  OPENAI_API_KEY: \${OPENAI_API_KEY:+SET (hidden)}"
                             echo "  MONGODB_URI: \${MONGODB_URI:+SET}"
                             echo "  S3_ACCESS_KEY_ID: \${S3_ACCESS_KEY_ID:+SET (hidden)}"
@@ -118,30 +96,12 @@ pipeline {
                             git pull origin main || git pull origin master || true
                         fi
                         
-                        # Load environment variables from .env or .env.local files
-                        # Priority: deployment .env > Jenkins env vars
-                        # Note: We're already in /opt/cptsd-cms directory after cd
-                        ENV_FILE=""
-                        
-                        if [ -f .env.local ]; then
-                            ENV_FILE=".env.local"
-                            echo "Loading environment variables from .env.local (deployment directory)"
-                        elif [ -f .env ]; then
-                            ENV_FILE=".env"
-                            echo "Loading environment variables from .env (deployment directory)"
-                        else
-                            echo "No .env file found in deployment directory. Using Jenkins environment variables if set"
-                        fi
-                        
-                        if [ -n "\$ENV_FILE" ] && [ -f "\$ENV_FILE" ]; then
-                            set -a
-                            # Use full path or ./ prefix to ensure shell can find the file
-                            . "./\$ENV_FILE"
-                            set +a
-                        fi
+                        # Use environment variables from Jenkins Global Properties
+                        # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
+                        # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
                         
                         # Export environment variables for docker-compose
-                        # Use shell variable syntax for variables that should be evaluated in shell
+                        # Jenkins Global Properties are already available as environment variables
                         export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
                         export MONGODB_URI=\${MONGODB_URI:-}
                         export S3_ENDPOINT=\${S3_ENDPOINT:-}
