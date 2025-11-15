@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Resource, { ResourceType, ResourceCategory } from '@/models/Resource';
+import Resource, { ResourceType, ResourceCategory } from '@cptsd/db/models/Resource';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';
@@ -34,6 +34,9 @@ export async function createResource(formData: FormData) {
       type: formData.get('type') as ResourceType,
       category: formData.get('category') as ResourceCategory,
       url: formData.get('url') as string | null,
+      phone: formData.get('phone') as string | null,
+      region: formData.get('region') as string | null,
+      languages: formData.get('languages') ? (formData.get('languages') as string).split(',').map(l => l.trim()).filter(Boolean) : undefined,
       author: formData.get('author') as string | null,
       publisher: formData.get('publisher') as string | null,
       isbn: formData.get('isbn') as string | null,
@@ -41,6 +44,7 @@ export async function createResource(formData: FormData) {
       thumbnail: formData.get('thumbnail') as string | null,
       tags: formData.get('tags') ? (formData.get('tags') as string).split(',').map(t => t.trim()).filter(Boolean) : [],
       featured: formData.get('featured') === 'true',
+      isFeatured: formData.get('featured') === 'true',
       rating: formData.get('rating') ? parseFloat(formData.get('rating') as string) : undefined,
       notes: formData.get('notes') as string | null,
       status: (formData.get('status') as 'ACTIVE' | 'ARCHIVED' | 'DRAFT') || 'ACTIVE',
@@ -77,6 +81,9 @@ export async function updateResource(id: string, formData: FormData) {
     const type = formData.get('type') as string | null;
     const category = formData.get('category') as string | null;
     const url = formData.get('url') as string | null;
+    const phone = formData.get('phone') as string | null;
+    const region = formData.get('region') as string | null;
+    const languages = formData.get('languages') as string | null;
     const author = formData.get('author') as string | null;
     const publisher = formData.get('publisher') as string | null;
     const isbn = formData.get('isbn') as string | null;
@@ -93,6 +100,11 @@ export async function updateResource(id: string, formData: FormData) {
     if (type !== null) updateData.type = type;
     if (category !== null) updateData.category = category;
     if (url !== null) updateData.url = url || undefined;
+    if (phone !== null) updateData.phone = phone || undefined;
+    if (region !== null) updateData.region = region || undefined;
+    if (languages !== null) {
+      updateData.languages = languages.split(',').map(l => l.trim()).filter(Boolean);
+    }
     if (author !== null) updateData.author = author || undefined;
     if (publisher !== null) updateData.publisher = publisher || undefined;
     if (isbn !== null) updateData.isbn = isbn || undefined;
@@ -101,7 +113,10 @@ export async function updateResource(id: string, formData: FormData) {
     if (tags !== null) {
       updateData.tags = tags.split(',').map(t => t.trim()).filter(Boolean);
     }
-    if (featured !== null) updateData.featured = featured === 'true';
+    if (featured !== null) {
+      updateData.featured = featured === 'true';
+      updateData.isFeatured = featured === 'true';
+    }
     if (rating !== null) updateData.rating = rating ? parseFloat(rating) : undefined;
     if (notes !== null) updateData.notes = notes || undefined;
     if (status !== null) updateData.status = status;

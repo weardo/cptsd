@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 
+// Legacy Navbar - kept for backward compatibility
+// New sidebar is in Sidebar.tsx
 export default function Navbar() {
   const { data: session } = useSession();
   const [contentMenuOpen, setContentMenuOpen] = useState(false);
@@ -89,6 +91,13 @@ export default function Navbar() {
                         onClick={() => setContentMenuOpen(false)}
                       >
                         Resources
+                      </Link>
+                      <Link
+                        href="/supportive-messages"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        onClick={() => setContentMenuOpen(false)}
+                      >
+                        Supportive Messages
                       </Link>
                     </div>
                   </>
@@ -230,6 +239,13 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Resources
+              </Link>
+              <Link
+                href="/supportive-messages"
+                className="block px-6 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Supportive Messages
               </Link>
               <div className="px-3 py-2 text-base font-medium text-gray-700">Tools</div>
               <Link

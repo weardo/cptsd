@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Settings from '@/models/Settings';
+import Settings from '@cptsd/db/models/Settings';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 

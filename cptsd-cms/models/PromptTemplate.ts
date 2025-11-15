@@ -54,7 +54,7 @@ PromptTemplateSchema.index({ category: 1 });
 PromptTemplateSchema.index({ isActive: 1 });
 
 const PromptTemplate: Model<IPromptTemplate> =
-  mongoose.models.PromptTemplate ||
+  (mongoose.models && mongoose.models.PromptTemplate) ||
   mongoose.model<IPromptTemplate>('PromptTemplate', PromptTemplateSchema);
 
 export default PromptTemplate;

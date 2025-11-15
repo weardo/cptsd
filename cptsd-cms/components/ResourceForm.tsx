@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createResource, updateResource } from '@/app/actions/resources';
-import { ResourceType, ResourceCategory } from '@/models/Resource';
+import { ResourceType, ResourceCategory } from '@cptsd/db/models/Resource';
 
 type ResourceFormProps = {
   initialResource?: {
@@ -141,6 +141,50 @@ export default function ResourceForm({ initialResource }: ResourceFormProps) {
             defaultValue={initialResource?.url || ''}
             className="input w-full"
             placeholder="https://..."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium mb-2">
+              Phone (for helplines)
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              defaultValue={(initialResource as any)?.phone || ''}
+              className="input w-full"
+              placeholder="+91-xxx-xxx-xxxx"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="region" className="block text-sm font-medium mb-2">
+              Region
+            </label>
+            <input
+              type="text"
+              id="region"
+              name="region"
+              defaultValue={(initialResource as any)?.region || ''}
+              className="input w-full"
+              placeholder="e.g., All India, Karnataka, Mumbai"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="languages" className="block text-sm font-medium mb-2">
+            Languages (comma-separated)
+          </label>
+          <input
+            type="text"
+            id="languages"
+            name="languages"
+            defaultValue={(initialResource as any)?.languages?.join(', ') || ''}
+            className="input w-full"
+            placeholder="English, Hindi, Tamil"
           />
         </div>
 

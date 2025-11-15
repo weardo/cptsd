@@ -4,8 +4,8 @@ services:
   # Next.js Blog Public Application
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../ # Build from repo root to include packages/db
+      dockerfile: cptsd-blog-public/Dockerfile
       args:
         MONGODB_URI: ${MONGODB_URI:-}
     restart: always

@@ -1,0 +1,15 @@
+# Production override for cptsd.in deployment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  app:
+    # Remove port mapping if using reverse proxy (Caddy)
+    # Port 3002 is only accessible via Caddy reverse proxy
+    ports: [] # Empty array removes port mapping
+    environment:
+      NODE_ENV: production
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'

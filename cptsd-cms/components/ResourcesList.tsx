@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ResourceType, ResourceCategory } from '@/models/Resource';
+import { ResourceType, ResourceCategory } from '@cptsd/db/models/Resource';
 
 type Resource = {
   id: string;

@@ -1,5 +1,5 @@
 import connectDB from './mongodb';
-import Settings from '@/models/Settings';
+import Settings from '@cptsd/db/models/Settings';
 
 /**
  * Get a setting value by key

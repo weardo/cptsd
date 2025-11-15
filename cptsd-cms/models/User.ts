@@ -24,7 +24,7 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Prevent model recompilation during hot reload
-const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const User: Model<IUser> = (mongoose.models && mongoose.models.User) || mongoose.model<IUser>('User', UserSchema);
 
 export default User;
 

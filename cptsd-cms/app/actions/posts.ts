@@ -1,8 +1,8 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Post, { PostType, PostStatus } from '@/models/Post';
-import Topic from '@/models/Topic';
+import Post, { PostType, PostStatus } from '@cptsd/db/models/Post';
+import Topic from '@cptsd/db/models/Topic';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { generateContentForPost } from '@/lib/openai-direct';

@@ -1,7 +1,7 @@
 import { getIdea, deleteIdea } from '@/app/actions/ideas';
 import { getTopics } from '@/app/actions/topics';
 import { convertIdeaToPost } from '@/app/actions/ideas';
-import Navbar from '@/components/Navbar';
+
 import IdeaDetail from '@/components/ideas/IdeaDetail';
 import DeleteButton from '@/components/DeleteButton';
 import { redirect } from 'next/navigation';
@@ -23,7 +23,6 @@ export default async function IdeaDetailPage({
   if (!ideaResult.success || !ideaResult.idea) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-red-600">Idea not found</p>
         </div>
@@ -55,7 +54,6 @@ export default async function IdeaDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Idea Details</h1>

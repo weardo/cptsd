@@ -15,6 +15,14 @@ export interface IBlogImage {
   generatedAt?: Date;
 }
 
+export enum ArticleCategory {
+  BASICS = 'BASICS',
+  INDIA_CONTEXT = 'INDIA_CONTEXT',
+  DAILY_LIFE = 'DAILY_LIFE',
+  HEALING = 'HEALING',
+  RELATIONSHIPS = 'RELATIONSHIPS',
+}
+
 export interface IBlog extends Document {
   title: string;
   slug: string;
@@ -26,6 +34,7 @@ export interface IBlog extends Document {
   summary?: string;
   status: BlogStatus;
   featuredImage?: string;
+  coverImageUrl?: string;
   images: IBlogImage[];
   topicId?: mongoose.Types.ObjectId;
   authorId?: mongoose.Types.ObjectId;
@@ -34,6 +43,8 @@ export interface IBlog extends Document {
   seoTitle?: string;
   seoDescription?: string;
   tags?: string[];
+  category?: ArticleCategory;
+  linkedPostId?: mongoose.Types.ObjectId;
   customContent?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +77,7 @@ const BlogSchema = new Schema<IBlog>(
       default: BlogStatus.DRAFT,
     },
     featuredImage: { type: String },
+    coverImageUrl: { type: String },
     images: [BlogImageSchema],
     topicId: { type: Schema.Types.ObjectId, ref: 'Topic' },
     authorId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -74,6 +86,11 @@ const BlogSchema = new Schema<IBlog>(
     seoTitle: { type: String },
     seoDescription: { type: String },
     tags: [{ type: String }],
+    category: {
+      type: String,
+      enum: Object.values(ArticleCategory),
+    },
+    linkedPostId: { type: Schema.Types.ObjectId, ref: 'Post' },
     customContent: { type: String },
   },
   {
@@ -87,6 +104,8 @@ BlogSchema.index({ publishedAt: -1 });
 BlogSchema.index({ createdAt: -1 });
 BlogSchema.index({ topicId: 1 });
 BlogSchema.index({ tags: 1 });
+BlogSchema.index({ category: 1 });
+BlogSchema.index({ linkedPostId: 1 });
 
 const Blog: Model<IBlog> = mongoose.models.Blog || mongoose.model<IBlog>('Blog', BlogSchema);
 

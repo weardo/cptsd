@@ -21,7 +21,7 @@ const TopicSchema = new Schema<ITopic>(
 
 // Note: No need for explicit index on slug since unique: true already creates one
 
-const Topic: Model<ITopic> = mongoose.models.Topic || mongoose.model<ITopic>('Topic', TopicSchema);
+const Topic: Model<ITopic> = (mongoose.models && mongoose.models.Topic) || mongoose.model<ITopic>('Topic', TopicSchema);
 
 export default Topic;
 

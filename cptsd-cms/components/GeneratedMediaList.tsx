@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { deleteAsset, generatePostAssets, downloadAssetsAsZip, generatePostAssetsWithVariants, uploadExternalImages } from '@/app/actions/assets';
 import JSZip from 'jszip';
 import ImageModal from './ImageModal';
-import { CompositionType } from '@/models/GeneratedAsset';
+import { CompositionType } from '@cptsd/db/models/GeneratedAsset';
 import { TargetFormat } from '@/lib/imagePromptBuilder';
 
 type GeneratedAsset = {

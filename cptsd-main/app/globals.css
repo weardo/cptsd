@@ -1,0 +1,407 @@
+@import 'tailwindcss';
+
+/* CPTSD.in Main Site - Calm, Healing, Low-Stimulation Design */
+
+/* Calming Color Palette */
+:root {
+  --soft-lavender: #d4c5e8;
+  --gentle-mint: #a8d5ba;
+  --warm-peach: #e8d4c1;
+  --sky-blue: #b8c5d6;
+  --sage-green: #a8c5a5;
+  --dusty-rose: #d4a5c7;
+  --soft-cream: #f5f1eb;
+  --warm-gray: #6b7280;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fafafa;
+  color: #2d3436;
+}
+
+/* Calm, readable typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  color: #2d3436;
+}
+
+p {
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+/* Links */
+a {
+  color: #5b8a9f;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #4a7283;
+}
+
+/* Buttons - Calming Healing Theme */
+button,
+.btn {
+  transition: all 0.3s ease;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d4c5e8 0%, #b8c5d6 100%);
+  color: #2d3436;
+  border: 1px solid rgba(212, 197, 232, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #c5b5d8 0%, #a8b5c6 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 197, 232, 0.3);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #a8d5ba 0%, #a8c5a5 100%);
+  color: #2d3436;
+  border: 1px solid rgba(168, 213, 186, 0.3);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #98c5aa 0%, #98b595 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 213, 186, 0.3);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #e8d4c1 0%, #d4a5c7 100%);
+  color: #2d3436;
+  border: 1px solid rgba(232, 212, 193, 0.3);
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #d8c4b1 0%, #c495b7 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 212, 193, 0.3);
+}
+
+/* Smooth transitions */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Floating Pets Container */
+.floating-pets-container {
+  position: fixed;
+  inset: 0; /* top: 0; right: 0; bottom: 0; left: 0; */
+  pointer-events: none; /* Allows clicks to pass through to elements below */
+  overflow: hidden; /* Important to hide pets when they are outside */
+  z-index: 60; /* Adjust as needed to ensure visibility */
+}
+
+/* Floating Pet Base Styles - Using CSS Transitions */
+.floating-pet {
+  position: fixed; /* Crucial for positioning relative to the viewport */
+  width: 60px; /* Adjust as per your pet's size */
+  height: 60px; /* Adjust as per your pet's size */
+  pointer-events: auto; /* Allow pointer events on the pet itself if interactive */
+
+  /* Performance optimization: tells browser these properties will change */
+  will-change: transform, opacity;
+
+  /* === CRITICAL FIXES === */
+  /* 1. Ensure smooth animation for position and opacity changes */
+  transition: transform 1.5s ease-in-out, opacity 1.5s ease-in-out;
+
+  /* Set initial state for pets */
+  opacity: 0; /* Start hidden until spawned by JS */
+
+  /* Initial position off-screen */
+  transform: translate(-9999px, -9999px);
+
+  /* Ensure speech bubbles appear above pet sprite */
+  z-index: 70;
+}
+
+/* Continuous floating animation - subtle bobbing on the sprite itself */
+@keyframes petFloat {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-9px) rotate(-1deg);
+  }
+}
+
+.pet-sprite {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+  width: 100%;
+  height: 100%;
+  /* Continuous floating/bobbing animation for lifelike movement */
+  animation: petFloat 4s ease-in-out infinite;
+  /* Each pet gets a slightly different animation delay for variety */
+  animation-delay: calc(var(--pet-delay, 0) * 0.5s);
+  /* Container for the actual pet content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Ensure sprite doesn't create stacking context that hides speech bubble */
+  position: relative;
+  z-index: 1;
+}
+
+.pet-sprite-content {
+  transition: transform 0.3s ease;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-sprite:hover .pet-sprite-content {
+  transform: scale(1.1);
+}
+
+.pet-sprite:hover {
+  animation-play-state: paused; /* Pause floating on hover */
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.speech-bubble {
+  animation: fade-in 0.4s ease-out;
+  z-index: 100 !important;
+  position: absolute !important;
+  /* Ensure bubble appears below pet (when position="bottom") */
+  pointer-events: none;
+}
+
+.speech-bubble > div {
+  pointer-events: auto;
+  /* Ensure border is visible - border-2 class with inline borderColor */
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Pet Click Animations */
+@keyframes petShake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  20% {
+    transform: translateX(5px) rotate(5deg);
+  }
+  30% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  40% {
+    transform: translateX(5px) rotate(5deg);
+  }
+  50% {
+    transform: translateX(-3px) rotate(-3deg);
+  }
+  60% {
+    transform: translateX(3px) rotate(3deg);
+  }
+  70% {
+    transform: translateX(-2px) rotate(-2deg);
+  }
+  80% {
+    transform: translateX(2px) rotate(2deg);
+  }
+  90% {
+    transform: translateX(-1px) rotate(-1deg);
+  }
+}
+
+@keyframes petFlip {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: rotateY(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotateY(360deg) scale(1);
+  }
+}
+
+@keyframes petFlyAway {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(100px, -100px) scale(0.8) rotate(180deg);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(200px, -200px) scale(0.3) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes petBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-20px) scale(1.1);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-10px) scale(1.05);
+  }
+}
+
+@keyframes petSpin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-30px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+@keyframes petHover {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.pet-animation-shake {
+  animation: petShake 0.6s ease-in-out;
+}
+
+.pet-animation-flip {
+  animation: petFlip 0.8s ease-in-out;
+}
+
+.pet-animation-fly-away {
+  animation: petFlyAway 1s ease-out forwards;
+}
+
+.pet-animation-bounce {
+  animation: petBounce 0.6s ease-in-out;
+}
+
+.pet-animation-spin {
+  animation: petSpin 0.8s ease-in-out;
+}
+
+.pet-hover {
+  animation: petHover 2s ease-in-out infinite;
+}
+
+.pet-heart {
+  pointer-events: none;
+  user-select: none;
+  z-index: 20;
+}
+
+/* Pet Control Button Container - Ensure it's always at bottom right */
+.pet-control-container {
+  position: fixed !important;
+  bottom: 1rem !important;
+  right: 1rem !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+/* Pet Entry/Exit - Now handled by CSS transitions in .floating-pet */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e9ecef;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

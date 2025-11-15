@@ -55,7 +55,7 @@ StandaloneGenerationSchema.index({ contentType: 1 });
 StandaloneGenerationSchema.index({ createdAt: -1 });
 
 const StandaloneGeneration: Model<IStandaloneGeneration> =
-  mongoose.models.StandaloneGeneration ||
+  (mongoose.models && mongoose.models.StandaloneGeneration) ||
   mongoose.model<IStandaloneGeneration>('StandaloneGeneration', StandaloneGenerationSchema);
 
 export default StandaloneGeneration;

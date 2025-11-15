@@ -1,6 +1,6 @@
 import { getTemplate, deleteTemplate } from '@/app/actions/templates';
 import { redirect } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+
 import DeleteButton from '@/components/DeleteButton';
 
 export default async function TemplateDetailPage({
@@ -20,7 +20,6 @@ export default async function TemplateDetailPage({
   if (!result.success || !result.template) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-red-600">Template not found</p>
         </div>
@@ -47,7 +46,6 @@ export default async function TemplateDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <a href="/templates" className="text-blue-600 hover:text-blue-800 text-sm mb-2 inline-block">

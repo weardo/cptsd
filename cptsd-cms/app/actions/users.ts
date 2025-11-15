@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import User from '@cptsd/db/models/User';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';

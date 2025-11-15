@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Merriweather, Inter } from 'next/font/google';
 import './globals.css';
+import { FloatingPetsContainer } from '@cptsd/pets';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import CrisisBanner from '@/components/CrisisBanner';
 
 const merriweather = Merriweather({
   weight: ['300', '400', '700'],
@@ -96,7 +100,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="antialiased bg-[#fafafa]">
-        {children}
+        <FloatingPetsContainer initialCount={3} />
+        <CrisisBanner />
+        <Header />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

@@ -90,7 +90,7 @@ GeneratedAssetSchema.index({ blogId: 1, compositionType: 1 }); // For filtering 
 GeneratedAssetSchema.index({ createdAt: -1 });
 
 const GeneratedAsset: Model<IGeneratedAsset> =
-  mongoose.models.GeneratedAsset || mongoose.model<IGeneratedAsset>('GeneratedAsset', GeneratedAssetSchema);
+  (mongoose.models && mongoose.models.GeneratedAsset) || mongoose.model<IGeneratedAsset>('GeneratedAsset', GeneratedAssetSchema);
 
 export default GeneratedAsset;
 

@@ -1,11 +1,12 @@
 import connectDB from './mongodb';
-import Blog, { BlogStatus } from '../models/Blog';
-import Topic from '../models/Topic';
+import { Article, ArticleStatus as BlogStatus } from '@cptsd/db';
+import Topic from '@cptsd/db/models/Topic';
 import mongoose from 'mongoose';
 
 export async function getPublishedBlogs(filters?: {
   topicId?: string;
   search?: string;
+  category?: string;
   limit?: number;
   skip?: number;
 }) {
@@ -25,6 +26,10 @@ export async function getPublishedBlogs(filters?: {
       query.topicId = filters.topicId;
     }
 
+    if (filters?.category) {
+      query.category = filters.category;
+    }
+
     if (filters?.search) {
       query.$or = [
         { title: { $regex: filters.search, $options: 'i' } },
@@ -34,14 +39,14 @@ export async function getPublishedBlogs(filters?: {
       ];
     }
 
-    const blogs = await Blog.find(query)
+    const blogs = await Article.find(query)
       .populate('topicId')
       .sort({ publishedAt: -1 })
       .limit(filters?.limit || 10)
       .skip(filters?.skip || 0)
       .lean();
 
-    const total = await Blog.countDocuments(query);
+    const total = await Article.countDocuments(query);
 
     return {
       blogs: blogs.map(transformBlog),
@@ -60,7 +65,7 @@ export async function getBlogBySlug(slug: string) {
   try {
     await connectDB();
 
-    const blog = await Blog.findOne({
+    const blog = await Article.findOne({
       slug,
       status: BlogStatus.PUBLISHED,
       publishedAt: { $lte: new Date() },
@@ -96,7 +101,7 @@ export async function getRelatedBlogs(blogId: string, topicId?: string, tags?: s
       query.tags = { $in: tags };
     }
 
-    const blogs = await Blog.find(query)
+    const blogs = await Article.find(query)
       .populate('topicId')
       .sort({ publishedAt: -1 })
       .limit(limit)
@@ -135,7 +140,7 @@ function transformBlog(blog: any) {
     slug: blog.slug,
     excerpt: blog.excerpt || null,
     content: blog.content,
-    featuredImage: blog.featuredImage || null,
+    featuredImage: blog.featuredImage || blog.coverImageUrl || null,
     images: blog.images || [],
     topic: typeof topic === 'object' && topic
       ? {
@@ -144,6 +149,7 @@ function transformBlog(blog: any) {
           slug: topic.slug,
         }
       : null,
+    category: blog.category || null,
     publishedAt: blog.publishedAt,
     readingTime: blog.readingTime || null,
     seoTitle: blog.seoTitle || blog.title,

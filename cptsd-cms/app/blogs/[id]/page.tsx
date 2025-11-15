@@ -1,5 +1,5 @@
 import { getBlog, getTopics } from '@/app/actions';
-import Navbar from '@/components/Navbar';
+
 import BlogDetail from '@/components/BlogDetail';
 
 // Force dynamic rendering to avoid MongoDB connection during build
@@ -19,7 +19,6 @@ export default async function BlogDetailPage({
   if (!blogResult.success || !blogResult.blog) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="card">
             <p className="text-red-600">
@@ -35,7 +34,6 @@ export default async function BlogDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlogDetail blog={blogResult.blog} topics={topics} />
       </div>

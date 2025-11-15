@@ -6,7 +6,7 @@ import { updateIdeaItems } from '@/app/actions/ideas';
 import { uploadFile } from '@/app/actions/uploads';
 import FileUpload from '../FileUpload';
 import ImageModal from '../ImageModal';
-import { IContentIdeaItem } from '@/models/ContentIdea';
+import { IContentIdeaItem } from '@cptsd/db/models/ContentIdea';
 
 type Topic = {
   id: string;

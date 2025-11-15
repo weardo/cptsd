@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Next.js Main Application
+  app:
+    build:
+      context: ../ # Build from repo root to include packages/db and packages/pets
+      dockerfile: cptsd-main/Dockerfile
+      args:
+        MONGODB_URI: ${MONGODB_URI:-}
+    restart: always
+    ports:
+      - '3002:3002'
+    environment:
+      # Database - Connect to shared MongoDB from cptsd-cms
+      # Set MONGODB_URI in .env file, or it will use defaults below
+      # Format: mongodb://username:password@mongodb:27017/cptsd-cms?authSource=admin
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
+    # MongoDB is provided by cptsd-cms deployment
+    # Connect to existing MongoDB service on shared network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3002',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Note: MongoDB is shared from cptsd-cms deployment
+  # Connect to existing MongoDB service on shared network
+
+networks:
+  app-network:
+    external: true
+    name: cptsd-cms_app-network

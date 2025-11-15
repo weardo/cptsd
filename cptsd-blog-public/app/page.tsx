@@ -74,59 +74,7 @@ export default async function HomePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Navbar */}
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link
-                href="/"
-                className="text-xl lg:text-2xl font-bold text-[#5b8a9f] hover:text-[#4a7283] transition-colors"
-              >
-                CPTSD Healing Blog
-              </Link>
-              <form
-                method="get"
-                action="/"
-                className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-8"
-              >
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    name="search"
-                    defaultValue={params.search || ''}
-                    placeholder="Search articles..."
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5b8a9f] focus:border-transparent bg-white text-gray-900 text-sm"
-                  />
-                  <svg
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#5b8a9f] text-white rounded-lg hover:bg-[#4a7283] transition-colors text-sm font-semibold shadow-sm"
-                >
-                  Search
-                </button>
-              </form>
-              <div className="text-sm text-gray-600 font-medium hidden lg:block">
-                Resources for Recovery
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 w-full">
           {/* Hero Section */}
           <section className="text-center mb-12 lg:mb-16 py-8 lg:py-12 px-4">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 lg:mb-6 leading-tight">
@@ -152,7 +100,7 @@ export default async function HomePage({
                   name="search"
                   defaultValue={params.search || ''}
                   placeholder="Search articles..."
-                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5b8a9f] focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-lavender focus:border-transparent bg-white text-gray-900"
                   aria-label="Search articles"
                 />
                 <svg
@@ -172,7 +120,7 @@ export default async function HomePage({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-[#5b8a9f] text-white rounded-lg hover:bg-[#4a7283] transition-colors font-semibold"
+                  className="flex-1 btn btn-primary"
                 >
                   Search
                 </button>
@@ -194,8 +142,8 @@ export default async function HomePage({
                   href="/"
                   className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
                     !params.topic
-                      ? 'bg-[#5b8a9f] text-white shadow-md'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-[#5b8a9f]'
+                      ? 'btn-primary text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-soft-lavender'
                   }`}
                 >
                   All Topics
@@ -206,8 +154,8 @@ export default async function HomePage({
                     href={`/?topic=${topic.id}`}
                     className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
                       params.topic === topic.id
-                        ? 'bg-[#5b8a9f] text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-[#5b8a9f]'
+                        ? 'btn-primary text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-soft-lavender'
                     }`}
                   >
                     {topic.name}
@@ -233,7 +181,7 @@ export default async function HomePage({
                 {(params.search || params.topic) && (
                   <Link
                     href="/"
-                    className="inline-block px-6 py-3 bg-[#5b8a9f] text-white rounded-lg hover:bg-[#4a7283] transition-colors font-semibold"
+                    className="inline-block btn btn-primary"
                   >
                     View All Articles
                   </Link>
@@ -265,7 +213,7 @@ export default async function HomePage({
                         {blog.topic && (
                           <Link
                             href={`/?topic=${blog.topic.id}`}
-                            className="px-3 py-1 bg-[#9fb3a7]/20 text-[#5b8a9f] rounded-full font-medium hover:bg-[#9fb3a7]/30 transition-colors text-xs"
+                            className="px-3 py-1 bg-[var(--sage-green)]/20 text-[#5b8a9f] rounded-full font-medium hover:bg-[var(--sage-green)]/30 transition-colors text-xs"
                           >
                             {blog.topic.name}
                           </Link>
@@ -357,27 +305,6 @@ export default async function HomePage({
               )}
             </>
           )}
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-[#5b8a9f] mb-3">
-                CPTSD Healing Blog
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto leading-relaxed">
-                A safe space for sharing resources, insights, and stories about
-                Complex PTSD recovery and healing. We're here to support you on
-                your journey.
-              </p>
-              <p className="text-sm text-gray-500">
-                &copy; {new Date().getFullYear()} CPTSD Healing Blog. All
-                rights reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
       </div>
     </>
   );

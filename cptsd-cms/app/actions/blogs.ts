@@ -1,8 +1,8 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Blog, { BlogStatus } from '@/models/Blog';
-import Topic from '@/models/Topic';
+import { Article, ArticleStatus as BlogStatus } from '@cptsd/db';
+import Topic from '@cptsd/db/models/Topic';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { transcribeYouTubeVideo, getYouTubeVideoMetadata } from '@/lib/youtube';
@@ -12,7 +12,7 @@ import { ensureUniqueSlug } from '@/lib/utils/slug';
 import { searchStockImages, downloadStockImage, getSuggestedImageQueries } from '@/lib/stockImages';
 import { generateBlogTopics, generateTopicsFromContent } from '@/lib/blogTopics';
 import { uploadToS3 } from '@/lib/s3';
-import GeneratedAsset, { AssetKind } from '@/models/GeneratedAsset';
+import GeneratedAsset, { AssetKind } from '@cptsd/db/models/GeneratedAsset';
 import mongoose from 'mongoose';
 
 const blogSchema = z.object({
@@ -39,6 +39,7 @@ export async function createBlog(formData: FormData) {
     const content = formData.get('content') as string;
     const youtubeUrl = formData.get('youtubeUrl') as string | null;
     const topicId = formData.get('topicId') as string | null;
+    const category = formData.get('category') as string | null;
     const customContentRaw = formData.get('customContent') as string | null;
     // Handle "$undefined" string from Next.js serialization
     const customContent = customContentRaw && customContentRaw !== '$undefined' ? customContentRaw : null;
@@ -55,17 +56,18 @@ export async function createBlog(formData: FormData) {
     const slug = await ensureUniqueSlug(
       baseSlug,
       async (s) => {
-        const existing = await Blog.findOne({ slug: s }).lean();
+        const existing = await Article.findOne({ slug: s }).lean();
         return !!existing;
       }
     );
 
-    const blog = await Blog.create({
+    const blog = await Article.create({
       title,
       slug,
       content,
       youtubeUrl: youtubeUrl || undefined,
       topicId: topicId || undefined,
+      category: category || undefined,
       customContent: customContent || undefined,
       status: BlogStatus.DRAFT,
     });
@@ -97,6 +99,7 @@ export async function updateBlog(id: string, formData: FormData) {
     const status = formData.get('status') as string | null;
     const featuredImage = formData.get('featuredImage') as string | null;
     const topicId = formData.get('topicId') as string | null;
+    const category = formData.get('category') as string | null;
     const tagsJson = formData.get('tags') as string | null;
     const customContent = formData.get('customContent') as string | null;
     const seoTitle = formData.get('seoTitle') as string | null;
@@ -110,7 +113,7 @@ export async function updateBlog(id: string, formData: FormData) {
       const uniqueSlug = await ensureUniqueSlug(
         slug,
         async (s) => {
-          const existing = await Blog.findOne({ slug: s, _id: { $ne: id } }).lean();
+          const existing = await Article.findOne({ slug: s, _id: { $ne: id } }).lean();
           return !!existing;
         },
         id
@@ -122,6 +125,7 @@ export async function updateBlog(id: string, formData: FormData) {
     if (status !== null) updateData.status = status;
     if (featuredImage !== null) updateData.featuredImage = featuredImage || undefined;
     if (topicId !== null) updateData.topicId = topicId || undefined;
+    if (category !== null) updateData.category = category || undefined;
     // Handle customContent - check for "$undefined" string (Next.js serialization issue)
     if (customContent !== null && customContent !== '' && customContent !== '$undefined') {
       updateData.customContent = customContent;
@@ -156,13 +160,13 @@ export async function updateBlog(id: string, formData: FormData) {
 
     // Set publishedAt if status is PUBLISHED
     if (status === 'PUBLISHED' && !updateData.publishedAt) {
-      const existingBlog = await Blog.findById(id).lean();
+      const existingBlog = await Article.findById(id).lean();
       if (!existingBlog?.publishedAt) {
         updateData.publishedAt = new Date();
       }
     }
 
-    const blog = await Blog.findByIdAndUpdate(id, updateData, {
+    const blog = await Article.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     })
@@ -193,7 +197,7 @@ export async function updateBlog(id: string, formData: FormData) {
 export async function deleteBlog(id: string) {
   try {
     await connectDB();
-    await Blog.findByIdAndDelete(id);
+    await Article.findByIdAndDelete(id);
 
     revalidatePath('/blogs');
     revalidatePath('/');
@@ -244,7 +248,7 @@ export async function getBlogs(filters?: {
       ];
     }
 
-    const blogs = await Blog.find(query)
+    const blogs = await Article.find(query)
       .populate('topicId')
       .sort({ createdAt: -1 })
       .lean();
@@ -267,7 +271,7 @@ export async function getBlog(id: string) {
   try {
     await connectDB();
 
-    const blog = await Blog.findById(id).populate('topicId').lean();
+    const blog = await Article.findById(id).populate('topicId').lean();
 
     if (!blog) {
       return { success: false, error: 'Blog not found' };
@@ -290,7 +294,7 @@ export async function getBlogBySlug(slug: string) {
   try {
     await connectDB();
 
-    const blog = await Blog.findOne({ slug, status: BlogStatus.PUBLISHED })
+    const blog = await Article.findOne({ slug, status: BlogStatus.PUBLISHED })
       .populate('topicId')
       .lean();
 
@@ -413,13 +417,13 @@ export async function transcribeAndGenerateBlog(
     const uniqueSlug = await ensureUniqueSlug(
       blogResult.slug,
       async (s) => {
-        const existing = await Blog.findOne({ slug: s }).lean();
+        const existing = await Article.findOne({ slug: s }).lean();
         return !!existing;
       }
     );
 
     // Step 6: Create blog post
-    const blog = await Blog.create({
+    const blog = await Article.create({
       title: blogResult.title,
       slug: uniqueSlug,
       excerpt: blogResult.excerpt,
@@ -494,7 +498,7 @@ export async function regenerateBlog(
   try {
     await connectDB();
 
-    const blog = await Blog.findById(id).lean();
+    const blog = await Article.findById(id).lean();
     if (!blog) {
       return { success: false, error: 'Blog not found' };
     }
@@ -601,7 +605,7 @@ export async function regenerateBlog(
     }
 
     // Update blog
-    const updatedBlog = await Blog.findByIdAndUpdate(
+    const updatedBlog = await Article.findByIdAndUpdate(
       id,
       {
         content: finalContent,
@@ -643,7 +647,7 @@ export async function regenerateBlog(
 
 // Helper functions
 async function transformBlog(id: string) {
-  const blog = await Blog.findById(id).populate('topicId').lean();
+  const blog = await Article.findById(id).populate('topicId').lean();
   if (!blog) throw new Error('Blog not found');
   return transformBlogFromDoc(blog);
 }
@@ -842,13 +846,13 @@ export async function generateBlogFromTopic(
     const uniqueSlug = await ensureUniqueSlug(
       blogResult.slug,
       async (s) => {
-        const existing = await Blog.findOne({ slug: s }).lean();
+        const existing = await Article.findOne({ slug: s }).lean();
         return !!existing;
       }
     );
 
     // Create blog post
-    const blog = await Blog.create({
+    const blog = await Article.create({
       title: blogResult.title,
       slug: uniqueSlug,
       excerpt: blogResult.excerpt,

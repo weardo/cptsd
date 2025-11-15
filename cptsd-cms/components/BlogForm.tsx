@@ -652,6 +652,20 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
             </div>
 
             <div>
+              <label htmlFor="category" className="block text-sm font-medium mb-2">
+                Category (Optional)
+              </label>
+              <select id="category" name="category" className="input w-full">
+                <option value="">Select a category</option>
+                <option value="BASICS">Basics</option>
+                <option value="INDIA_CONTEXT">India Context</option>
+                <option value="DAILY_LIFE">Daily Life</option>
+                <option value="HEALING">Healing</option>
+                <option value="RELATIONSHIPS">Relationships</option>
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="content" className="block text-sm font-medium mb-2">
                 Content *
               </label>

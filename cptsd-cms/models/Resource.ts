@@ -10,6 +10,11 @@ export enum ResourceType {
   ARTICLE = 'ARTICLE',
   TOOL = 'TOOL',
   OTHER = 'OTHER',
+  // New types for support page
+  HELPLINE = 'HELPLINE',
+  THERAPY_DIRECTORY = 'THERAPY_DIRECTORY',
+  NGO = 'NGO',
+  EDUCATIONAL_SITE = 'EDUCATIONAL_SITE',
 }
 
 export enum ResourceCategory {
@@ -29,6 +34,9 @@ export interface IResource extends Document {
   type: ResourceType;
   category: ResourceCategory;
   url?: string;
+  phone?: string; // For helplines
+  region?: string; // e.g., "All India", "Karnataka", "Mumbai"
+  languages?: string[]; // e.g., ["English","Hindi"]
   author?: string;
   publisher?: string;
   isbn?: string; // For books
@@ -36,6 +44,7 @@ export interface IResource extends Document {
   thumbnail?: string;
   tags: string[];
   featured: boolean;
+  isFeatured?: boolean; // Alias for featured
   rating?: number; // 1-5 stars
   notes?: string; // Admin notes
   status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT';
@@ -58,6 +67,9 @@ const ResourceSchema = new Schema<IResource>(
       required: true,
     },
     url: { type: String },
+    phone: { type: String },
+    region: { type: String },
+    languages: [{ type: String }],
     author: { type: String },
     publisher: { type: String },
     isbn: { type: String },
@@ -65,6 +77,7 @@ const ResourceSchema = new Schema<IResource>(
     thumbnail: { type: String },
     tags: [{ type: String }],
     featured: { type: Boolean, default: false },
+    isFeatured: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 },
     notes: { type: String },
     status: {
@@ -83,11 +96,14 @@ ResourceSchema.index({ type: 1 });
 ResourceSchema.index({ category: 1 });
 ResourceSchema.index({ status: 1 });
 ResourceSchema.index({ featured: 1 });
+ResourceSchema.index({ isFeatured: 1 });
 ResourceSchema.index({ tags: 1 });
+ResourceSchema.index({ region: 1 });
 ResourceSchema.index({ createdAt: -1 });
 
+// Safely get or create the model
 const Resource: Model<IResource> =
-  mongoose.models.Resource || mongoose.model<IResource>('Resource', ResourceSchema);
+  (mongoose.models && mongoose.models.Resource) || mongoose.model<IResource>('Resource', ResourceSchema);
 
 export default Resource;
 

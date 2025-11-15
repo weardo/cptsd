@@ -107,7 +107,7 @@ ContentIdeaSchema.index({ createdAt: -1 });
 ContentIdeaSchema.index({ position: 1 });
 
 const ContentIdea: Model<IContentIdea> =
-  mongoose.models.ContentIdea || mongoose.model<IContentIdea>('ContentIdea', ContentIdeaSchema);
+  (mongoose.models && mongoose.models.ContentIdea) || mongoose.model<IContentIdea>('ContentIdea', ContentIdeaSchema);
 
 export default ContentIdea;
 

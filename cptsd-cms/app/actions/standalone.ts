@@ -2,7 +2,7 @@
 
 import OpenAI from 'openai';
 import connectDB from '@/lib/mongodb';
-import StandaloneGeneration from '@/models/StandaloneGeneration';
+import StandaloneGeneration from '@cptsd/db/models/StandaloneGeneration';
 import { uploadToS3, deleteFromS3 } from '@/lib/s3';
 import { getS3Config } from '@/lib/config';
 import { revalidatePath } from 'next/cache';

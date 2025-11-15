@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import connectDB from './mongodb';
-import PromptTemplate from '@/models/PromptTemplate';
+import PromptTemplate from '@cptsd/db/models/PromptTemplate';
 import { getTokenLimitParams } from './openaiHelpers';
 
 if (!process.env.OPENAI_API_KEY) {

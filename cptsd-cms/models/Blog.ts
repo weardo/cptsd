@@ -15,6 +15,14 @@ export interface IBlogImage {
   generatedAt?: Date;
 }
 
+export enum ArticleCategory {
+  BASICS = 'BASICS',
+  INDIA_CONTEXT = 'INDIA_CONTEXT',
+  DAILY_LIFE = 'DAILY_LIFE',
+  HEALING = 'HEALING',
+  RELATIONSHIPS = 'RELATIONSHIPS',
+}
+
 export interface IBlog extends Document {
   title: string;
   slug: string;
@@ -24,9 +32,10 @@ export interface IBlog extends Document {
   youtubeVideoId?: string; // Extracted video ID
   transcription?: string; // Full transcription from YouTube
   transcriptionRaw?: string; // Raw transcription before processing
-  summary?: string; // AI-generated summary
+  summary?: string; // AI-generated summary (short abstract for Article)
   status: BlogStatus;
-  featuredImage?: string; // URL to featured/hero image
+  featuredImage?: string; // URL to featured/hero image (coverImageUrl for Article)
+  coverImageUrl?: string; // Alias for featuredImage
   images: IBlogImage[]; // Array of images embedded in the content
   topicId?: mongoose.Types.ObjectId; // Optional link to topic
   authorId?: mongoose.Types.ObjectId;
@@ -35,6 +44,8 @@ export interface IBlog extends Document {
   seoTitle?: string;
   seoDescription?: string;
   tags?: string[];
+  category?: ArticleCategory; // Article category: BASICS, INDIA_CONTEXT, DAILY_LIFE, HEALING, RELATIONSHIPS
+  linkedPostId?: mongoose.Types.ObjectId; // Optional link to AI-generated "post" entity
   customContent?: string; // User-added custom content
   regenerationHistory?: Array<{
     timestamp: Date;
@@ -73,6 +84,7 @@ const BlogSchema = new Schema<IBlog>(
       default: BlogStatus.DRAFT,
     },
     featuredImage: { type: String },
+    coverImageUrl: { type: String },
     images: [BlogImageSchema],
     topicId: { type: Schema.Types.ObjectId, ref: 'Topic' },
     authorId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -81,6 +93,11 @@ const BlogSchema = new Schema<IBlog>(
     seoTitle: { type: String },
     seoDescription: { type: String },
     tags: [{ type: String }],
+    category: {
+      type: String,
+      enum: Object.values(ArticleCategory),
+    },
+    linkedPostId: { type: Schema.Types.ObjectId, ref: 'Post' },
     customContent: { type: String },
     regenerationHistory: [
       {
@@ -102,9 +119,19 @@ BlogSchema.index({ publishedAt: -1 });
 BlogSchema.index({ createdAt: -1 });
 BlogSchema.index({ topicId: 1 });
 BlogSchema.index({ tags: 1 });
+BlogSchema.index({ category: 1 });
+BlogSchema.index({ linkedPostId: 1 });
 BlogSchema.index({ youtubeVideoId: 1 });
 
-const Blog: Model<IBlog> = mongoose.models.Blog || mongoose.model<IBlog>('Blog', BlogSchema);
+// Ensure coverImageUrl defaults to featuredImage if not explicitly set
+BlogSchema.pre('save', function(next) {
+  if (!this.coverImageUrl && this.featuredImage) {
+    this.coverImageUrl = this.featuredImage;
+  }
+  next();
+});
+
+const Blog: Model<IBlog> = (mongoose.models && mongoose.models.Blog) || mongoose.model<IBlog>('Blog', BlogSchema);
 
 export default Blog;
 

@@ -4,8 +4,8 @@ services:
   # Next.js Application
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../ # Build from repo root to include packages/db
+      dockerfile: cptsd-cms/Dockerfile
       args:
         OPENAI_API_KEY: ${OPENAI_API_KEY:-}
         MONGODB_URI: ${MONGODB_URI:-}

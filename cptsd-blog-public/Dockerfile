@@ -6,8 +6,8 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files from cptsd-blog-public
+COPY cptsd-blog-public/package.json cptsd-blog-public/package-lock.json* ./
 # Suppress deprecation warnings (they're harmless but noisy)
 RUN npm ci --loglevel=warn
 
@@ -15,7 +15,12 @@ RUN npm ci --loglevel=warn
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Copy app source
+COPY cptsd-blog-public/ .
+# Copy shared database package
+COPY packages/db ./packages/db
+# Create symlink in node_modules for @cptsd/db
+RUN mkdir -p node_modules/@cptsd && ln -sf ../../packages/db node_modules/@cptsd/db
 
 # Accept build arguments for environment variables
 ARG MONGODB_URI

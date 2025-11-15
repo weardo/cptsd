@@ -1,7 +1,7 @@
 import { getN8nConfig } from './config';
 import connectDB from './mongodb';
-import Post from '@/models/Post';
-import Topic from '@/models/Topic';
+import Post from '@cptsd/db/models/Post';
+import Topic from '@cptsd/db/models/Topic';
 
 export type N8nGenerateContentRequest = {
   postId: string;

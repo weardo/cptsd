@@ -77,7 +77,7 @@ PostSchema.index({ status: 1 });
 PostSchema.index({ postType: 1 });
 PostSchema.index({ createdAt: -1 });
 
-const Post: Model<IPost> = mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema);
+const Post: Model<IPost> = (mongoose.models && mongoose.models.Post) || mongoose.model<IPost>('Post', PostSchema);
 
 export default Post;
 

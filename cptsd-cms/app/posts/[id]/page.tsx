@@ -4,7 +4,7 @@ import { getPostAssets } from '@/app/actions/assets';
 import { getSettings } from '@/app/actions/settings';
 import { getAvailableModels } from '@/lib/settings';
 import { redirect } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+
 import PostDetail from '@/components/PostDetail';
 
 // Force dynamic rendering to avoid MongoDB connection during build
@@ -26,7 +26,6 @@ export default async function PostDetailPage({
   if (!postResult.success || !postResult.post) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-red-600">Post not found</p>
         </div>
@@ -65,7 +64,6 @@ export default async function PostDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <PostDetail
           post={postResult.post}
