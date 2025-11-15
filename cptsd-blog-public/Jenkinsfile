@@ -115,7 +115,8 @@ pipeline {
                         
                         if [ -n "\$ENV_FILE" ] && [ -f "\$ENV_FILE" ]; then
                             set -a
-                            . "\$ENV_FILE"
+                            # Use full path or ./ prefix to ensure shell can find the file
+                            . "./\$ENV_FILE"
                             set +a
                         fi
                         
