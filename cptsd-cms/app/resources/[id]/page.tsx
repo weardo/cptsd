@@ -2,6 +2,9 @@ import { getResource } from '@/app/actions/resources';
 import Navbar from '@/components/Navbar';
 import ResourceDetail from '@/components/ResourceDetail';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function ResourceDetailPage({
   params,
 }: {

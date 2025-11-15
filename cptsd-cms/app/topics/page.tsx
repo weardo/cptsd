@@ -2,6 +2,9 @@ import { getTopics } from '@/app/actions/topics';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function TopicsPage() {
   const result = await getTopics();
   const topics = result.topics || [];

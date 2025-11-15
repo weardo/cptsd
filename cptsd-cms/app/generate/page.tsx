@@ -3,6 +3,9 @@ import StandaloneGenerator from '@/components/StandaloneGenerator';
 import { getAvailableModels } from '@/lib/settings';
 import { getStandaloneGenerations } from '@/app/actions/standalone';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function GeneratePage() {
   const availableModels = getAvailableModels();
   const generationsResult = await getStandaloneGenerations();

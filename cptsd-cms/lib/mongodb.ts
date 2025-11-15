@@ -2,7 +2,12 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
+// Allow build-time placeholder for Next.js build process
+// Validation happens at runtime when actually connecting
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                    (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI);
+
+if (!MONGODB_URI && !isBuildTime) {
   console.warn('⚠️  MONGODB_URI is not set. Database operations will fail.');
   console.warn('   Please set MONGODB_URI in .env.local');
   console.warn('   Get a free MongoDB Atlas database: https://www.mongodb.com/cloud/atlas/register');
@@ -23,6 +28,13 @@ if (!global.mongoose) {
 }
 
 async function connectDB() {
+  // During build time, MongoDB may not be available - handle gracefully
+  if (isBuildTime) {
+    // Return a mock connection to allow build to proceed
+    // Actual connection will happen at runtime
+    return cached.conn || mongoose;
+  }
+
   if (!MONGODB_URI) {
     throw new Error(
       'MONGODB_URI is not set. Please set it in .env.local\n' +

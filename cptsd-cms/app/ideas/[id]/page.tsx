@@ -6,6 +6,9 @@ import IdeaDetail from '@/components/ideas/IdeaDetail';
 import DeleteButton from '@/components/DeleteButton';
 import { redirect } from 'next/navigation';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function IdeaDetailPage({
   params,
 }: {

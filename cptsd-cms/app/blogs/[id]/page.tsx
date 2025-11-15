@@ -2,6 +2,9 @@ import { getBlog, getTopics } from '@/app/actions';
 import Navbar from '@/components/Navbar';
 import BlogDetail from '@/components/BlogDetail';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function BlogDetailPage({
   params,
 }: {

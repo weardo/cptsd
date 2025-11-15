@@ -7,6 +7,9 @@ import { redirect } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import PostDetail from '@/components/PostDetail';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function PostDetailPage({
   params,
 }: {

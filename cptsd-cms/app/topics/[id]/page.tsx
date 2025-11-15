@@ -4,6 +4,9 @@ import Navbar from '@/components/Navbar';
 import TopicForm from '@/components/TopicForm';
 import DeleteButton from '@/components/DeleteButton';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function TopicDetailPage({
   params,
 }: {

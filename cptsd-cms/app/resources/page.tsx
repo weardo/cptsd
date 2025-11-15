@@ -3,6 +3,9 @@ import Navbar from '@/components/Navbar';
 import ResourcesList from '@/components/ResourcesList';
 import Filters from '@/components/Filters';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function ResourcesPage({
   searchParams,
 }: {

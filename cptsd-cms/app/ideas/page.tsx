@@ -5,6 +5,9 @@ import IdeasBoard from '@/components/ideas/IdeasBoard';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function IdeasPage() {
   const [ideasResult, topicsResult] = await Promise.all([getIdeas(), getTopics()]);
 

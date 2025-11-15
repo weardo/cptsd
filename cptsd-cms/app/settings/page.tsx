@@ -3,6 +3,9 @@ import { getAvailableModels } from '@/lib/settings';
 import Navbar from '@/components/Navbar';
 import SettingsForm from '@/components/SettingsForm';
 
+// Force dynamic rendering to avoid MongoDB connection during build
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
   const result = await getSettings();
   const settings = result.settings;
