@@ -138,7 +138,7 @@ async function transcribeWithYouTubeTranscriptAPI(videoId: string): Promise<{
     };
   } catch (error) {
     throw new Error(
-      `YouTube Transcript API failed: ${error instanceof Error ? error.message : 'Unknown error'}'
+      `YouTube Transcript API failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
