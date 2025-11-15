@@ -32,14 +32,17 @@ fi
 
 # Get CSRF token
 echo "🔑 Getting CSRF token..."
-CRUMB=$(curl -s -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+CRUMB=$(curl -s -k -u "$JENKINS_USER:$JENKINS_PASSWORD" \
     "$JENKINS_URL/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
 
-if [ -z "$CRUMB" ]; then
-    echo "⚠️  Could not get CSRF token, continuing without it..."
-    CRUMB_HEADER=""
+if [ -n "$CRUMB" ]; then
+    CRUMB_FIELD=$(echo "$CRUMB" | cut -d: -f1)
+    CRUMB_VALUE=$(echo "$CRUMB" | cut -d: -f2)
+    echo "✅ CSRF token obtained"
 else
-    CRUMB_HEADER="-H \"$CRUMB\""
+    echo "⚠️  Could not get CSRF token, continuing without it..."
+    CRUMB_FIELD=""
+    CRUMB_VALUE=""
 fi
 
 # Read SSH private key
@@ -59,7 +62,7 @@ cat > /tmp/jenkins-credentials.xml << EOF
 EOF
 
 # Check if credential already exists
-CREDENTIAL_EXISTS=$(curl -s -u "$JENKINS_USER:$JENKINS_PASSWORD" \
+CREDENTIAL_EXISTS=$(curl -s -k -u "$JENKINS_USER:$JENKINS_PASSWORD" \
     "$JENKINS_URL/credentials/store/system/domain/_/credential/github-ssh-key/config.xml" 2>/dev/null || echo "")
 
 # Use Jenkins CLI or REST API with proper authentication
@@ -82,26 +85,25 @@ CREDENTIAL_JSON=$(cat << EOF
 EOF
 )
 
+# Build curl command with CSRF token
+CURL_CMD="curl -s -k -X POST -u \"$JENKINS_USER:$JENKINS_PASSWORD\""
+
+if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
+    CURL_CMD="$CURL_CMD -H \"$CRUMB_FIELD: $CRUMB_VALUE\""
+fi
+
 if [ -n "$CREDENTIAL_EXISTS" ]; then
     echo "⚠️  Credential already exists. Updating..."
-    curl -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-        -H "Content-Type: application/json" \
-        --data "$CREDENTIAL_JSON" \
-        "$JENKINS_URL/credentials/store/system/domain/_/credential/github-ssh-key/updateSubmit" || \
-    curl -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-        --data-binary @/tmp/jenkins-credentials.xml \
-        -H "Content-Type: text/xml" \
-        "$JENKINS_URL/credentials/store/system/domain/_/credential/github-ssh-key/config.xml"
+    # Try JSON API first
+    eval "$CURL_CMD -H \"Content-Type: application/json\" --data '$CREDENTIAL_JSON' \"$JENKINS_URL/credentials/store/system/domain/_/credential/github-ssh-key/updateSubmit\"" > /dev/null 2>&1 || \
+    # Fallback to XML
+    eval "$CURL_CMD --data-binary @/tmp/jenkins-credentials.xml -H \"Content-Type: text/xml\" \"$JENKINS_URL/credentials/store/system/domain/_/credential/github-ssh-key/config.xml\"" > /dev/null 2>&1
 else
     echo "📝 Creating credential..."
-    curl -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-        -H "Content-Type: application/json" \
-        --data "$CREDENTIAL_JSON" \
-        "$JENKINS_URL/credentials/store/system/domain/_/createCredentials" || \
-    curl -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-        --data-binary @/tmp/jenkins-credentials.xml \
-        -H "Content-Type: text/xml" \
-        "$JENKINS_URL/credentials/store/system/domain/_/createCredentials"
+    # Try JSON API first
+    eval "$CURL_CMD -H \"Content-Type: application/json\" --data '$CREDENTIAL_JSON' \"$JENKINS_URL/credentials/store/system/domain/_/createCredentials\"" > /dev/null 2>&1 || \
+    # Fallback to XML
+    eval "$CURL_CMD --data-binary @/tmp/jenkins-credentials.xml -H \"Content-Type: text/xml\" \"$JENKINS_URL/credentials/store/system/domain/_/createCredentials\"" > /dev/null 2>&1
 fi
 
 rm -f /tmp/jenkins-credentials.xml
