@@ -71,7 +71,7 @@ export async function createBlog(formData: FormData) {
 
     return {
       success: true,
-      blog: await transformBlog(blog._id.toString()),
+      blog: await transformBlog(String(blog._id)),
     };
   } catch (error) {
     console.error('Error creating blog:', error);
@@ -377,7 +377,7 @@ export async function transcribeAndGenerateBlog(
 
     return {
       success: true,
-      blog: await transformBlog(blog._id.toString()),
+      blog: await transformBlog(String(blog._id)),
     };
   } catch (error) {
     console.error('Error transcribing and generating blog:', error);
@@ -500,8 +500,8 @@ async function transformBlog(id: string) {
 function transformBlogFromDoc(blog: any) {
   const topic = blog.topicId;
   return {
-    id: blog._id.toString(),
-    _id: blog._id.toString(),
+    id: String(blog._id),
+    _id: String(blog._id),
     title: blog.title,
     slug: blog.slug,
     excerpt: blog.excerpt || null,
@@ -514,17 +514,17 @@ function transformBlogFromDoc(blog: any) {
     status: blog.status,
     featuredImage: blog.featuredImage || null,
     images: blog.images || [],
-    topicId: typeof topic === 'object' ? topic?._id?.toString() : topic?.toString() || null,
+    topicId: typeof topic === 'object' && topic?._id ? String(topic._id) : topic ? String(topic) : null,
     topic: typeof topic === 'object' && topic
       ? {
-          id: topic._id.toString(),
-          _id: topic._id.toString(),
+          id: String(topic._id),
+          _id: String(topic._id),
           name: topic.name,
           slug: topic.slug,
           description: topic.description,
         }
       : null,
-    authorId: blog.authorId?.toString() || null,
+    authorId: blog.authorId ? String(blog.authorId) : null,
     publishedAt: blog.publishedAt || null,
     readingTime: blog.readingTime || null,
     seoTitle: blog.seoTitle || null,

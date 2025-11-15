@@ -49,7 +49,7 @@ export async function generateBlogImages(
     try {
       // Build image prompt using the prompt builder
       const promptOptions: ImagePromptOptions = {
-        compositionType: 'METAPHOR_SCENE', // Blog images are typically metaphor scenes
+        compositionType: 'TEXT_FOCUSED', // Blog images are typically text-focused with backgrounds
         targetFormat: 'FEED_SQUARE', // Blog images are typically square/landscape
         summary: imgPos.description,
         tone: tone as any,

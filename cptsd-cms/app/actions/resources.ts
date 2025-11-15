@@ -55,7 +55,7 @@ export async function createResource(formData: FormData) {
 
     return {
       success: true,
-      resource: transformResource(resource._id.toString()),
+      resource: await transformResource(String(resource._id)),
     };
   } catch (error) {
     console.error('Error creating resource:', error);
@@ -238,8 +238,8 @@ async function transformResource(id: string) {
 
 function transformResourceFromDoc(resource: any) {
   return {
-    id: resource._id.toString(),
-    _id: resource._id.toString(),
+    id: String(resource._id),
+    _id: String(resource._id),
     title: resource.title,
     description: resource.description,
     type: resource.type,
