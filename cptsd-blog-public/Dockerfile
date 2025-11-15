@@ -16,8 +16,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Accept build arguments for environment variables
+ARG MONGODB_URI
+
+# Set environment variables for build (Next.js may need these during build)
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV MONGODB_URI=${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
+
 # Build Next.js application
-ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Production image, copy all the files and run next

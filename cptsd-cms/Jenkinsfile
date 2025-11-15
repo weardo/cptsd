@@ -25,9 +25,45 @@ pipeline {
                 dir('cptsd-cms') {
                     script {
                         echo "Building ${APP_NAME} Docker image..."
-                        sh '''
+                        sh """
+                            # Load environment variables from .env or .env.local files
+                            # Priority: repository .env.local > repository .env > deployment .env > Jenkins env vars
+                            ENV_FILE=""
+                            
+                            if [ -f .env.local ]; then
+                                ENV_FILE=".env.local"
+                                echo "Loading environment variables from .env.local (repository)"
+                            elif [ -f .env ]; then
+                                ENV_FILE=".env"
+                                echo "Loading environment variables from .env (repository)"
+                            elif [ -f ${DEPLOY_PATH}/.env ]; then
+                                ENV_FILE="${DEPLOY_PATH}/.env"
+                                echo "Loading environment variables from ${DEPLOY_PATH}/.env (deployment directory)"
+                            else
+                                echo "No .env file found. Using Jenkins environment variables if set"
+                            fi
+                            
+                            if [ -n "\$ENV_FILE" ]; then
+                                set -a
+                                source "\$ENV_FILE"
+                                set +a
+                            fi
+                            
+                            # Export environment variables for docker-compose build
+                            # Use shell variable syntax for variables that should be evaluated in shell
+                            export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
+                            export MONGODB_URI=\${MONGODB_URI:-}
+                            export S3_ENDPOINT=\${S3_ENDPOINT:-}
+                            export S3_ACCESS_KEY_ID=\${S3_ACCESS_KEY_ID:-}
+                            export S3_SECRET_ACCESS_KEY=\${S3_SECRET_ACCESS_KEY:-}
+                            export S3_BUCKET_NAME=\${S3_BUCKET_NAME:-}
+                            export ADMIN_EMAIL=\${ADMIN_EMAIL:-}
+                            export ADMIN_PASSWORD=\${ADMIN_PASSWORD:-}
+                            export NEXTAUTH_URL=\${NEXTAUTH_URL:-}
+                            export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
+                            
                             docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache app
-                        '''
+                        """
                     }
                 }
             }
@@ -62,6 +98,42 @@ pipeline {
                         if [ -d .git ]; then
                             git pull origin main || git pull origin master || true
                         fi
+                        
+                        # Load environment variables from .env or .env.local files
+                        # Priority: repository .env.local > repository .env > deployment .env > Jenkins env vars
+                        ENV_FILE=""
+                        
+                        if [ -f cptsd-cms/.env.local ]; then
+                            ENV_FILE="cptsd-cms/.env.local"
+                            echo "Loading environment variables from .env.local (repository)"
+                        elif [ -f cptsd-cms/.env ]; then
+                            ENV_FILE="cptsd-cms/.env"
+                            echo "Loading environment variables from .env (repository)"
+                        elif [ -f .env ]; then
+                            ENV_FILE=".env"
+                            echo "Loading environment variables from .env (deployment directory)"
+                        else
+                            echo "No .env file found. Using Jenkins environment variables if set"
+                        fi
+                        
+                        if [ -n "\$ENV_FILE" ]; then
+                            set -a
+                            source "\$ENV_FILE"
+                            set +a
+                        fi
+                        
+                        # Export environment variables for docker-compose
+                        # Use shell variable syntax for variables that should be evaluated in shell
+                        export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
+                        export MONGODB_URI=\${MONGODB_URI:-}
+                        export S3_ENDPOINT=\${S3_ENDPOINT:-}
+                        export S3_ACCESS_KEY_ID=\${S3_ACCESS_KEY_ID:-}
+                        export S3_SECRET_ACCESS_KEY=\${S3_SECRET_ACCESS_KEY:-}
+                        export S3_BUCKET_NAME=\${S3_BUCKET_NAME:-}
+                        export ADMIN_EMAIL=\${ADMIN_EMAIL:-}
+                        export ADMIN_PASSWORD=\${ADMIN_PASSWORD:-}
+                        export NEXTAUTH_URL=\${NEXTAUTH_URL:-}
+                        export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
                         
                         # Stop existing containers
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down || true
