@@ -15,6 +15,7 @@ describe('Config', () => {
 
   it('should validate required environment variables', () => {
     process.env = {
+      NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       S3_ACCESS_KEY_ID: 'test-key',
       S3_SECRET_ACCESS_KEY: 'test-secret',
@@ -22,7 +23,7 @@ describe('Config', () => {
       ADMIN_EMAIL: 'admin@test.com',
       ADMIN_PASSWORD: 'testpassword123',
       NEXTAUTH_SECRET: 'test-secret-min-32-chars-long-required',
-    };
+    } as typeof process.env;
 
     expect(() => {
       require('./config').getEnv();
@@ -30,7 +31,9 @@ describe('Config', () => {
   });
 
   it('should throw error if required variables are missing', () => {
-    process.env = {};
+    process.env = {
+      NODE_ENV: 'test',
+    } as typeof process.env;
 
     expect(() => {
       require('./config').getEnv();
@@ -39,6 +42,7 @@ describe('Config', () => {
 
   it('should handle optional S3_ENDPOINT', () => {
     process.env = {
+      NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       S3_ACCESS_KEY_ID: 'test-key',
       S3_SECRET_ACCESS_KEY: 'test-secret',
@@ -47,7 +51,7 @@ describe('Config', () => {
       ADMIN_PASSWORD: 'testpassword123',
       NEXTAUTH_SECRET: 'test-secret-min-32-chars-long-required',
       S3_ENDPOINT: '',
-    };
+    } as typeof process.env;
 
     expect(() => {
       const config = require('./config');
@@ -58,6 +62,7 @@ describe('Config', () => {
 
   it('should handle optional N8N_BASE_URL', () => {
     process.env = {
+      NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       S3_ACCESS_KEY_ID: 'test-key',
       S3_SECRET_ACCESS_KEY: 'test-secret',
@@ -65,7 +70,7 @@ describe('Config', () => {
       ADMIN_EMAIL: 'admin@test.com',
       ADMIN_PASSWORD: 'testpassword123',
       NEXTAUTH_SECRET: 'test-secret-min-32-chars-long-required',
-    };
+    } as typeof process.env;
 
     expect(() => {
       const config = require('./config');

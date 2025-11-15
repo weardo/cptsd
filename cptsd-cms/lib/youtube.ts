@@ -29,61 +29,96 @@ export function getYouTubeUrl(videoId: string): string {
 }
 
 /**
- * Transcribe YouTube video using yt-dlp
- * This requires yt-dlp to be installed on the system
+ * Check if yt-dlp is available on the system
+ */
+async function isYtDlpAvailable(): Promise<boolean> {
+  try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    
+    await execAsync('which yt-dlp', { timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Transcribe YouTube video using youtube-transcript package (primary) or yt-dlp (fallback)
  */
 export async function transcribeYouTubeVideo(
   videoUrl: string
 ): Promise<{ transcription: string; rawTranscription: string; videoId: string }> {
-  const { exec } = await import('child_process');
-  const { promisify } = await import('util');
-  const execAsync = promisify(exec);
-
   const videoId = extractYouTubeVideoId(videoUrl);
   if (!videoId) {
     throw new Error('Invalid YouTube URL');
   }
 
+  // Try youtube-transcript package first (already installed, no external dependencies)
   try {
-    // Use yt-dlp to get subtitles
-    // First, try to get auto-generated subtitles
-    const command = `yt-dlp --write-auto-sub --sub-lang en --skip-download --sub-format vtt "${videoUrl}" -o - 2>/dev/null || yt-dlp --write-sub --sub-lang en --skip-download --sub-format vtt "${videoUrl}" -o - 2>/dev/null || echo ""`;
-
-    const { stdout, stderr } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-      timeout: 300000, // 5 minute timeout
-    });
-
-    if (stderr && !stdout) {
-      console.warn('yt-dlp stderr:', stderr);
-      throw new Error('Failed to extract subtitles from YouTube video');
-    }
-
-    // Parse VTT format to extract text
-    const rawTranscription = stdout || '';
-    const transcription = parseVTT(rawTranscription);
-
-    if (!transcription) {
-      throw new Error('No transcription found. The video may not have subtitles available.');
-    }
-
-    return {
-      transcription,
-      rawTranscription,
-      videoId,
-    };
+    return await transcribeWithYouTubeTranscriptAPI(videoId);
   } catch (error) {
-    console.error('Error transcribing YouTube video:', error);
+    console.warn('youtube-transcript package failed, trying yt-dlp fallback:', error);
     
-    // Fallback: Try using YouTube Transcript API (requires youtube-transcript package)
-    try {
-      return await transcribeWithYouTubeTranscriptAPI(videoId);
-    } catch (fallbackError) {
+    // Fallback to yt-dlp if available
+    const ytDlpAvailable = await isYtDlpAvailable();
+    if (!ytDlpAvailable) {
       throw new Error(
-        `Failed to transcribe video: ${error instanceof Error ? error.message : 'Unknown error'}. Please ensure yt-dlp is installed or the video has captions.`
+        `Failed to transcribe video. The video may not have captions available, or yt-dlp is not installed. ` +
+        `To install yt-dlp, run: pip install yt-dlp (or use your system package manager)`
+      );
+    }
+
+    try {
+      return await transcribeWithYtDlp(videoUrl, videoId);
+    } catch (ytDlpError) {
+      throw new Error(
+        `Failed to transcribe video: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+        `The video may not have subtitles available.`
       );
     }
   }
+}
+
+/**
+ * Transcribe using yt-dlp
+ */
+async function transcribeWithYtDlp(
+  videoUrl: string,
+  videoId: string
+): Promise<{ transcription: string; rawTranscription: string; videoId: string }> {
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
+  const execAsync = promisify(exec);
+
+  // Use yt-dlp to get subtitles
+  // First, try to get auto-generated subtitles
+  const command = `yt-dlp --write-auto-sub --sub-lang en --skip-download --sub-format vtt "${videoUrl}" -o - 2>/dev/null || yt-dlp --write-sub --sub-lang en --skip-download --sub-format vtt "${videoUrl}" -o - 2>/dev/null || echo ""`;
+
+  const { stdout, stderr } = await execAsync(command, {
+    maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    timeout: 300000, // 5 minute timeout
+  });
+
+  if (stderr && !stdout) {
+    console.warn('yt-dlp stderr:', stderr);
+    throw new Error('Failed to extract subtitles from YouTube video');
+  }
+
+  // Parse VTT format to extract text
+  const rawTranscription = stdout || '';
+  const transcription = parseVTT(rawTranscription);
+
+  if (!transcription) {
+    throw new Error('No transcription found. The video may not have subtitles available.');
+  }
+
+  return {
+    transcription,
+    rawTranscription,
+    videoId,
+  };
 }
 
 /**
@@ -144,9 +179,82 @@ async function transcribeWithYouTubeTranscriptAPI(videoId: string): Promise<{
 }
 
 /**
- * Get video metadata (title, description, etc.) using yt-dlp
+ * Get video metadata using YouTube oEmbed API (primary) or yt-dlp (fallback)
  */
 export async function getYouTubeVideoMetadata(videoUrl: string): Promise<{
+  title: string;
+  description: string;
+  duration: number;
+  thumbnail: string;
+}> {
+  const videoId = extractYouTubeVideoId(videoUrl);
+  if (!videoId) {
+    throw new Error('Invalid YouTube URL');
+  }
+
+  // Try oEmbed API first (no external dependencies)
+  try {
+    return await getMetadataWithOEmbed(videoId);
+  } catch (error) {
+    console.warn('oEmbed API failed, trying yt-dlp fallback:', error);
+    
+    // Fallback to yt-dlp if available
+    const ytDlpAvailable = await isYtDlpAvailable();
+    if (!ytDlpAvailable) {
+      // Return minimal metadata if yt-dlp is not available
+      return {
+        title: '',
+        description: '',
+        duration: 0,
+        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      };
+    }
+
+    try {
+      return await getMetadataWithYtDlp(videoUrl);
+    } catch (ytDlpError) {
+      console.error('Error fetching YouTube metadata with yt-dlp:', ytDlpError);
+      // Return minimal metadata as last resort
+      return {
+        title: '',
+        description: '',
+        duration: 0,
+        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      };
+    }
+  }
+}
+
+/**
+ * Get metadata using YouTube oEmbed API
+ */
+async function getMetadataWithOEmbed(videoId: string): Promise<{
+  title: string;
+  description: string;
+  duration: number;
+  thumbnail: string;
+}> {
+  const oEmbedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+  
+  const response = await fetch(oEmbedUrl);
+  if (!response.ok) {
+    throw new Error(`oEmbed API returned ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    title: data.title || '',
+    description: '', // oEmbed doesn't provide description
+    duration: 0, // oEmbed doesn't provide duration
+    thumbnail: data.thumbnail_url || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+  };
+}
+
+/**
+ * Get metadata using yt-dlp
+ */
+async function getMetadataWithYtDlp(videoUrl: string): Promise<{
   title: string;
   description: string;
   duration: number;
@@ -156,26 +264,19 @@ export async function getYouTubeVideoMetadata(videoUrl: string): Promise<{
   const { promisify } = await import('util');
   const execAsync = promisify(exec);
 
-  try {
-    const command = `yt-dlp --dump-json --no-warnings "${videoUrl}"`;
-    const { stdout } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024,
-      timeout: 60000,
-    });
+  const command = `yt-dlp --dump-json --no-warnings "${videoUrl}"`;
+  const { stdout } = await execAsync(command, {
+    maxBuffer: 10 * 1024 * 1024,
+    timeout: 60000,
+  });
 
-    const metadata = JSON.parse(stdout);
+  const metadata = JSON.parse(stdout);
 
-    return {
-      title: metadata.title || '',
-      description: metadata.description || '',
-      duration: metadata.duration || 0,
-      thumbnail: metadata.thumbnail || metadata.thumbnails?.[0]?.url || '',
-    };
-  } catch (error) {
-    console.error('Error fetching YouTube metadata:', error);
-    throw new Error(
-      `Failed to fetch video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+  return {
+    title: metadata.title || '',
+    description: metadata.description || '',
+    duration: metadata.duration || 0,
+    thumbnail: metadata.thumbnail || metadata.thumbnails?.[0]?.url || '',
+  };
 }
 

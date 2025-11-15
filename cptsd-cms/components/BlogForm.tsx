@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBlog, transcribeAndGenerateBlog, searchBlogStockImages, generateBlogTopicsAI } from '@/app/actions/blogs';
 
@@ -44,6 +44,72 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
   const [stockImageQuery, setStockImageQuery] = useState('');
   const [stockImages, setStockImages] = useState<any[]>([]);
   const [searchingImages, setSearchingImages] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 5, message: '', step: 0 });
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Steps for blog generation
+  const steps = [
+    { name: 'Transcribing video', weight: 1 },
+    { name: 'Fetching metadata', weight: 0.5 },
+    { name: 'Generating blog content', weight: 2 },
+    { name: 'Generating images', weight: 1.5 },
+    { name: 'Finalizing', weight: 0.5 },
+  ];
+
+  // Simulate progress updates during generation
+  useEffect(() => {
+    if (generating) {
+      const totalWeight = steps.reduce((sum, step) => sum + step.weight, 0);
+      let currentWeight = 0;
+      let currentStep = 0;
+
+      const updateProgress = () => {
+        if (currentStep < steps.length) {
+          const step = steps[currentStep];
+          const stepProgress = Math.min((currentWeight / totalWeight) * 100, 95); // Cap at 95% until done
+          
+          setProgress({
+            current: Math.floor(stepProgress),
+            total: 100,
+            message: step.name,
+            step: currentStep,
+          });
+
+          // Move to next step after estimated time
+          const stepTime = step.weight * 20000; // 20 seconds per weight unit
+          currentWeight += step.weight;
+          
+          if (currentWeight < totalWeight) {
+            currentStep++;
+            setTimeout(updateProgress, stepTime);
+          }
+        }
+      };
+
+      // Start progress simulation
+      setProgress({
+        current: 0,
+        total: 100,
+        message: steps[0].name,
+        step: 0,
+      });
+      
+      progressIntervalRef.current = setTimeout(updateProgress, 1000);
+    } else {
+      // Reset progress when not generating
+      if (progressIntervalRef.current) {
+        clearTimeout(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      setProgress({ current: 0, total: 5, message: '', step: 0 });
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearTimeout(progressIntervalRef.current);
+      }
+    };
+  }, [generating]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,15 +124,19 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
           includeImages: imageSource !== 'none',
           rephrase,
           summarize,
-          customContent: customContent || undefined,
+          customContent: customContent && customContent.trim() ? customContent.trim() : undefined,
         });
 
         if (result.success && result.blog) {
-          router.push(`/blogs/${result.blog.id}`);
-          router.refresh();
+          setProgress({ current: 100, total: 100, message: 'Complete!', step: steps.length - 1 });
+          setTimeout(() => {
+            router.push(`/blogs/${result.blog.id}`);
+            router.refresh();
+          }, 500);
         } else {
           setError(result.error || 'Failed to generate blog from YouTube video');
           setGenerating(false);
+          setProgress({ current: 0, total: 5, message: '', step: 0 });
         }
       });
     } else {
@@ -134,6 +204,55 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
+          </div>
+        )}
+
+        {/* Progress Bar */}
+        {generating && progress.total > 0 && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-blue-900">{progress.message}</span>
+              <span className="text-sm text-blue-700">
+                {progress.current}%
+              </span>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-2.5 mb-3">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(progress.current, 100)}%`,
+                }}
+              />
+            </div>
+            {/* Step indicators */}
+            <div className="flex justify-between items-center text-xs text-blue-600">
+              {steps.map((step, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-center ${
+                    idx < progress.step
+                      ? 'text-blue-800 font-medium'
+                      : idx === progress.step
+                      ? 'text-blue-600 font-medium'
+                      : 'text-blue-400'
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full mr-1 ${
+                      idx < progress.step
+                        ? 'bg-blue-600'
+                        : idx === progress.step
+                        ? 'bg-blue-500 animate-pulse'
+                        : 'bg-blue-300'
+                    }`}
+                  />
+                  <span className="hidden sm:inline">{step.name}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              Generating blog post... This may take a few minutes. Please do not close this tab.
+            </p>
           </div>
         )}
 

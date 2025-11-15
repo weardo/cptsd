@@ -37,7 +37,9 @@ export async function createBlog(formData: FormData) {
     const content = formData.get('content') as string;
     const youtubeUrl = formData.get('youtubeUrl') as string | null;
     const topicId = formData.get('topicId') as string | null;
-    const customContent = formData.get('customContent') as string | null;
+    const customContentRaw = formData.get('customContent') as string | null;
+    // Handle "$undefined" string from Next.js serialization
+    const customContent = customContentRaw && customContentRaw !== '$undefined' ? customContentRaw : null;
 
     // Generate slug from title
     const baseSlug = title
@@ -118,19 +120,36 @@ export async function updateBlog(id: string, formData: FormData) {
     if (status !== null) updateData.status = status;
     if (featuredImage !== null) updateData.featuredImage = featuredImage || undefined;
     if (topicId !== null) updateData.topicId = topicId || undefined;
-    if (customContent !== null) updateData.customContent = customContent || undefined;
+    // Handle customContent - check for "$undefined" string (Next.js serialization issue)
+    if (customContent !== null && customContent !== '' && customContent !== '$undefined') {
+      updateData.customContent = customContent;
+    } else if (customContent === '' || customContent === '$undefined') {
+      updateData.customContent = undefined;
+    }
+    
     if (seoTitle !== null) updateData.seoTitle = seoTitle || undefined;
     if (seoDescription !== null) updateData.seoDescription = seoDescription || undefined;
 
-    if (tagsJson !== null) {
+    // Handle tags - can be JSON array or comma-separated string
+    if (tagsJson !== null && tagsJson !== '' && tagsJson !== '$undefined') {
       try {
+        // Try parsing as JSON first
         const tags = JSON.parse(tagsJson);
         if (Array.isArray(tags)) {
           updateData.tags = tags;
         }
       } catch (e) {
-        console.error('Error parsing tags:', e);
+        // If not JSON, treat as comma-separated string
+        const tags = tagsJson
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0);
+        if (tags.length > 0) {
+          updateData.tags = tags;
+        }
       }
+    } else if (tagsJson === '' || tagsJson === '$undefined') {
+      updateData.tags = [];
     }
 
     // Set publishedAt if status is PUBLISHED
@@ -301,6 +320,11 @@ export async function transcribeAndGenerateBlog(
     summarize?: boolean;
   }
 ) {
+  // Handle "$undefined" string from Next.js serialization
+  const processedOptions = options ? {
+    ...options,
+    customContent: options.customContent && options.customContent !== '$undefined' ? options.customContent : undefined,
+  } : undefined;
   try {
     await connectDB();
 
@@ -319,23 +343,23 @@ export async function transcribeAndGenerateBlog(
     // Step 3: Generate blog content
     const blogResult = await generateBlogFromTranscription({
       transcription,
-      title: options?.title || videoMetadata.title,
-      customContent: options?.customContent,
-      tone: options?.tone || 'gentle',
-      includeImages: options?.includeImages !== false,
-      rephrase: options?.rephrase || false,
-      summarize: options?.summarize || false,
+      title: processedOptions?.title || videoMetadata.title,
+      customContent: processedOptions?.customContent,
+      tone: processedOptions?.tone || 'gentle',
+      includeImages: processedOptions?.includeImages !== false,
+      rephrase: processedOptions?.rephrase || false,
+      summarize: processedOptions?.summarize || false,
     });
 
     // Step 4: Generate images if requested
     let finalContent = blogResult.content;
     let images: any[] = [];
 
-    if (options?.includeImages !== false && blogResult.imagePositions.length > 0) {
+    if (processedOptions?.includeImages !== false && blogResult.imagePositions.length > 0) {
       const generatedImages = await generateBlogImages(
         blogResult.imagePositions,
         blogResult.content,
-        options?.tone || 'gentle'
+        processedOptions?.tone || 'gentle'
       );
 
       // Insert images into content
@@ -351,10 +375,19 @@ export async function transcribeAndGenerateBlog(
       }));
     }
 
-    // Step 5: Create blog post
+    // Step 5: Ensure unique slug
+    const uniqueSlug = await ensureUniqueSlug(
+      blogResult.slug,
+      async (s) => {
+        const existing = await Blog.findOne({ slug: s }).lean();
+        return !!existing;
+      }
+    );
+
+    // Step 6: Create blog post
     const blog = await Blog.create({
       title: blogResult.title,
-      slug: blogResult.slug,
+      slug: uniqueSlug,
       excerpt: blogResult.excerpt,
       content: finalContent,
       youtubeUrl,
@@ -369,7 +402,7 @@ export async function transcribeAndGenerateBlog(
       seoTitle: blogResult.seoTitle,
       seoDescription: blogResult.seoDescription,
       tags: blogResult.suggestedTags,
-      customContent: options?.customContent,
+      customContent: processedOptions?.customContent,
     });
 
     revalidatePath('/blogs');
