@@ -348,15 +348,31 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
                     className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
                     onError={(e) => {
                       const img = e.target as HTMLImageElement;
+                      const originalSrc = img.src;
+                      
                       // Check if this is an OpenAI URL (expired)
-                      const isOpenAIUrl = img.src.includes('oaidalleapiprodscus.blob.core.windows.net') || 
-                                         img.src.includes('openai.com');
+                      const isOpenAIUrl = originalSrc.includes('oaidalleapiprodscus.blob.core.windows.net') || 
+                                         originalSrc.includes('openai.com');
+                      
+                      // Check if this is an S3/MinIO URL (should not be marked as expired)
+                      const isS3Url = originalSrc.includes('minio') || 
+                                     originalSrc.includes('s3') || 
+                                     originalSrc.includes('localhost:9000') ||
+                                     originalSrc.includes('127.0.0.1:9000') ||
+                                     originalSrc.includes('cptsd-cms');
                       
                       // If image failed to load, try the main URL if it's different
                       if (asset.thumbnailUrl && img.src === asset.thumbnailUrl && asset.url !== asset.thumbnailUrl && !isOpenAIUrl) {
                         img.src = asset.url;
+                      } else if (isS3Url) {
+                        // For S3 images, just show a generic error (not expired)
+                        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzkzOGE4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                        const container = img.parentElement;
+                        if (container) {
+                          container.setAttribute('data-error', 'true');
+                        }
                       } else {
-                        // Fallback to placeholder with expired indicator
+                        // Fallback to placeholder with expired indicator (only for OpenAI URLs)
                         img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzkzOGE4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkV4cGlyZWQ8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSIjOWM5YTk3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2U8L3RleHQ+PC9zdmc+';
                         
                         // Add error indicator
