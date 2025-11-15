@@ -4,6 +4,7 @@
 
 set -e
 
+MAIN_DOMAIN="cptsd.in"
 CMS_DOMAIN="cms.cptsd.in"
 BLOG_DOMAIN="blog.cptsd.in"
 JENKINS_DOMAIN="jenkins.cptsd.in"
@@ -35,6 +36,24 @@ fi
 
 # Create comprehensive Caddyfile
 cat > /etc/caddy/Caddyfile << EOF
+# Main Website Application
+${MAIN_DOMAIN} {
+    reverse_proxy localhost:3002
+    
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/${MAIN_DOMAIN}.log
+    }
+}
+
 # CMS Application
 ${CMS_DOMAIN} {
     reverse_proxy localhost:3000
@@ -90,9 +109,17 @@ ${JENKINS_DOMAIN} {
 }
 EOF
 
-# Create log directory
+# Create log directory and ensure proper permissions
 mkdir -p /var/log/caddy
 chown caddy:caddy /var/log/caddy
+chmod 755 /var/log/caddy
+# Create log files for all domains to avoid permission issues
+touch /var/log/caddy/${MAIN_DOMAIN}.log
+touch /var/log/caddy/${CMS_DOMAIN}.log
+touch /var/log/caddy/${BLOG_DOMAIN}.log
+touch /var/log/caddy/${JENKINS_DOMAIN}.log
+chown caddy:caddy /var/log/caddy/*.log
+chmod 644 /var/log/caddy/*.log
 
 echo "✅ Validating Caddy configuration..."
 caddy validate --config /etc/caddy/Caddyfile
@@ -105,17 +132,22 @@ echo ""
 echo "✅ Domain configuration complete!"
 echo ""
 echo "📋 DNS Configuration needed in GoDaddy:"
-echo "   1. ${CMS_DOMAIN}:"
+echo "   1. ${MAIN_DOMAIN} (root domain):"
+echo "      - Type: A"
+echo "      - Name: @ (or leave blank)"
+echo "      - Value: $SERVER_IP"
+echo ""
+echo "   2. ${CMS_DOMAIN}:"
 echo "      - Type: A"
 echo "      - Name: cms"
 echo "      - Value: $SERVER_IP"
 echo ""
-echo "   2. ${BLOG_DOMAIN}:"
+echo "   3. ${BLOG_DOMAIN}:"
 echo "      - Type: A"
 echo "      - Name: blog"
 echo "      - Value: $SERVER_IP"
 echo ""
-echo "   3. ${JENKINS_DOMAIN}:"
+echo "   4. ${JENKINS_DOMAIN}:"
 echo "      - Type: A"
 echo "      - Name: jenkins"
 echo "      - Value: $SERVER_IP"
@@ -123,6 +155,7 @@ echo ""
 echo "⏳ Wait for DNS propagation (5-30 minutes)"
 echo ""
 echo "🧪 Test domains:"
+echo "   - Main: https://${MAIN_DOMAIN}"
 echo "   - CMS: https://${CMS_DOMAIN}"
 echo "   - Blog: https://${BLOG_DOMAIN}"
 echo "   - Jenkins: https://${JENKINS_DOMAIN}"
