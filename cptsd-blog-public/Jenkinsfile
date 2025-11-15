@@ -7,6 +7,14 @@ pipeline {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         DOCKER_COMPOSE_PROD_FILE = 'docker-compose.prod.yml'
         DOMAIN = 'blog.cptsd.in'
+        
+        // Environment variables from Jenkins job configuration (if set)
+        // These will be used if .env files are not found
+        // To set these in Jenkins:
+        //   Option 1: Manage Jenkins → Configure System → Global properties → Environment variables
+        //   Option 2: Job → Configure → This project is parameterized → Add String Parameters
+        // These variables inherit from Jenkins global properties or job parameters
+        // If not set in Jenkins, they will default to empty string and be loaded from .env files
     }
     
     stages {

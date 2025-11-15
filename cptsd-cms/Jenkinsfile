@@ -7,6 +7,14 @@ pipeline {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         DOCKER_COMPOSE_PROD_FILE = 'docker-compose.prod.yml'
         DOMAIN = 'cms.cptsd.in'
+        
+        // Environment variables from Jenkins job configuration (if set)
+        // These will be used if .env files are not found
+        // To set these in Jenkins:
+        //   Option 1: Manage Jenkins → Configure System → Global properties → Environment variables
+        //   Option 2: Job → Configure → This project is parameterized → Add String Parameters
+        // These variables inherit from Jenkins global properties or job parameters
+        // If not set in Jenkins, they will default to empty string and be loaded from .env files
     }
     
     stages {
@@ -50,7 +58,10 @@ pipeline {
                             fi
                             
                             # Export environment variables for docker-compose build
-                            # Use shell variable syntax for variables that should be evaluated in shell
+                            # These will use values from .env file if loaded, otherwise from Jenkins environment variables
+                            # Jenkins environment variables are set via:
+                            #   - Global Properties: Manage Jenkins → Configure System → Global properties → Environment variables
+                            #   - Job Parameters: Job → Configure → This project is parameterized → Add String Parameters
                             export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
                             export MONGODB_URI=\${MONGODB_URI:-}
                             export S3_ENDPOINT=\${S3_ENDPOINT:-}
@@ -61,6 +72,14 @@ pipeline {
                             export ADMIN_PASSWORD=\${ADMIN_PASSWORD:-}
                             export NEXTAUTH_URL=\${NEXTAUTH_URL:-}
                             export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
+                            
+                            # Show which variables are set (mask secrets)
+                            echo "Environment variables check:"
+                            echo "  OPENAI_API_KEY: \${OPENAI_API_KEY:+SET (hidden)}"
+                            echo "  MONGODB_URI: \${MONGODB_URI:+SET}"
+                            echo "  S3_ACCESS_KEY_ID: \${S3_ACCESS_KEY_ID:+SET (hidden)}"
+                            echo "  ADMIN_EMAIL: \${ADMIN_EMAIL:+SET}"
+                            echo "  NEXTAUTH_SECRET: \${NEXTAUTH_SECRET:+SET (hidden)}"
                             
                             docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache app
                         """
