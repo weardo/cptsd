@@ -4,9 +4,18 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 export interface BlogTopic {
   title: string;
@@ -28,7 +37,7 @@ export async function generateBlogTopics(
   }
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -90,7 +99,7 @@ export async function generateTopicsFromContent(
   }
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {

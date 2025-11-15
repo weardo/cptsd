@@ -1,9 +1,18 @@
 import OpenAI from 'openai';
 import { getTokenLimitParams } from './openaiHelpers';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 /**
  * Download an image from URL and convert to File object for OpenAI API
@@ -58,7 +67,7 @@ export async function generateImageWithReference(
     if (useEdit) {
       // Use DALL-E 2 edit API to modify the image based on prompt
       console.log('🎨 Using DALL-E 2 image edit API...');
-      const response = await openai.images.edit({
+      const response = await getOpenAI().images.edit({
         image: imageFile,
         prompt: userPrompt,
         n: 1,
@@ -74,7 +83,7 @@ export async function generateImageWithReference(
     } else {
       // Use DALL-E 2 variations API to create variations of the image
       console.log('🔄 Using DALL-E 2 image variations API...');
-      const response = await openai.images.createVariation({
+      const response = await getOpenAI().images.createVariation({
         image: imageFile,
         n: 1,
         size: '1024x1024',
@@ -141,7 +150,7 @@ The enhanced prompt should be suitable for DALL-E 3 image generation and should 
     });
 
     // Use GPT-4o (multimodal) to analyze images
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o', // GPT-4o supports vision
       messages: [
         {

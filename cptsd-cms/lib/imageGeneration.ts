@@ -6,9 +6,18 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn('⚠️  OPENAI_API_KEY is not set. Image generation will not work.');
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 export type SlidePrompt = {
   slideNumber: number;
@@ -298,7 +307,7 @@ export async function generatePostImages(options: GenerateImageOptions): Promise
             } catch (editError) {
               console.warn(`⚠️ Image edit failed for slide ${slide.slideNumber}, falling back to standard generation:`, editError);
               // Fallback to standard DALL-E 2 generation
-              const genResponse = await openai.images.generate({
+              const genResponse = await getOpenAI().images.generate({
                 model: 'dall-e-2',
                 prompt: prompt,
                 size: '1024x1024',
@@ -309,7 +318,7 @@ export async function generatePostImages(options: GenerateImageOptions): Promise
             }
           } else {
             // Standard generation without reference image
-            const genResponse = await openai.images.generate({
+            const genResponse = await getOpenAI().images.generate({
               model: imageModel as 'dall-e-3' | 'dall-e-2',
               prompt: prompt,
               size: '1024x1024',
@@ -366,7 +375,7 @@ export async function generatePostImages(options: GenerateImageOptions): Promise
     try {
       const prompt = await createImagePrompt(options.script, options.caption, tone, options.finchImageUrl, undefined, 'FEED');
 
-      const feedResponse = await openai.images.generate({
+      const feedResponse = await getOpenAI().images.generate({
         model: imageModel as 'dall-e-3' | 'dall-e-2',
         prompt: prompt,
         size: '1024x1024', // DALL-E 3 supports 1024x1024 (square) and 1792x1024 (landscape)
@@ -412,7 +421,7 @@ export async function generatePostImages(options: GenerateImageOptions): Promise
       // DALL-E 3 supports: 1024x1024 (square), 1792x1024 (landscape), 1024x1792 (portrait)
       // Note: 1024x1792 is closest to Instagram story format (1080x1920, 9:16)
       // In production, you might want to crop/resize the result to exact dimensions
-      const storyResponse = await openai.images.generate({
+      const storyResponse = await getOpenAI().images.generate({
         model: imageModel as 'dall-e-3' | 'dall-e-2',
         prompt: prompt,
         size: '1024x1792', // Vertical/portrait format (closest to 9:16 for stories)
@@ -459,7 +468,7 @@ export async function generatePostImages(options: GenerateImageOptions): Promise
       const prompt = basePrompt + 
         ' This is for a vertical video reel format. Create a dynamic, motion-friendly composition that would work well as a video background. Ensure the bird mascot is clearly visible and could be animated in post-production.';
 
-      const reelResponse = await openai.images.generate({
+      const reelResponse = await getOpenAI().images.generate({
         model: imageModel as 'dall-e-3' | 'dall-e-2',
         prompt: prompt,
         size: '1024x1792', // Vertical format for reels
@@ -581,7 +590,7 @@ export async function generateImagesForPost(args: GenerateImagesForPostArgs): Pr
       }
 
       // Generate image
-      const response = await openai.images.generate({
+      const response = await getOpenAI().images.generate({
         model: imageModel,
         prompt: prompt,
         size: size,

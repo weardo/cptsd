@@ -7,9 +7,18 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn('⚠️  OPENAI_API_KEY is not set. OpenAI features will not work.');
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 export type GenerateIdeasRequest = {
   topicName: string;
@@ -74,7 +83,7 @@ export async function generateIdeas(request: GenerateIdeasRequest): Promise<Gene
     }
   }
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: model, // Use selected model or default
     messages: [
       {
@@ -234,7 +243,7 @@ export async function generateContentFromIdea(ideaId: string, model?: string): P
   const systemPrompt = defaultSystemPrompt;
 
   // Generate script
-  const scriptResponse = await openai.chat.completions.create({
+  const scriptResponse = await getOpenAI().chat.completions.create({
     model: selectedModel,
     messages: [
       {
@@ -253,7 +262,7 @@ export async function generateContentFromIdea(ideaId: string, model?: string): P
   const script = scriptResponse.choices[0]?.message?.content || '';
 
   // Generate caption
-  const captionResponse = await openai.chat.completions.create({
+  const captionResponse = await getOpenAI().chat.completions.create({
     model: selectedModel,
     messages: [
       {
@@ -272,7 +281,7 @@ export async function generateContentFromIdea(ideaId: string, model?: string): P
   const caption = captionResponse.choices[0]?.message?.content || '';
 
   // Generate hashtags
-  const hashtagsResponse = await openai.chat.completions.create({
+  const hashtagsResponse = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini', // Use gpt-4o-mini for hashtags (faster, cheaper, supports JSON)
     messages: [
       {

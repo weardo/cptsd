@@ -11,9 +11,18 @@ import { getTokenLimitParams } from '@/lib/openaiHelpers';
 
 const s3Config = getS3Config();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 export async function generateStandaloneContent(formData: FormData) {
   try {
@@ -99,7 +108,7 @@ export async function generateStandaloneContent(formData: FormData) {
 
     // Generate text content
     if (contentType === 'text' || contentType === 'both') {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: model,
         messages: messages as any,
         temperature: 0.7,
@@ -148,7 +157,7 @@ export async function generateStandaloneContent(formData: FormData) {
                 contentType === 'both' ? generatedContent : undefined
               );
               
-              const imageResponse = await openai.images.generate({
+              const imageResponse = await getOpenAI().images.generate({
                 model: 'dall-e-3',
                 prompt: enhancedPrompt,
                 size: '1024x1024',
@@ -168,7 +177,7 @@ export async function generateStandaloneContent(formData: FormData) {
           }
         } else {
           // No reference images - use DALL-E 3 directly
-          const imageResponse = await openai.images.generate({
+          const imageResponse = await getOpenAI().images.generate({
             model: 'dall-e-3',
             prompt: prompt,
             size: '1024x1024',

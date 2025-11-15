@@ -1,9 +1,18 @@
 import OpenAI from 'openai';
 import { buildImagePrompt, CompositionType, TargetFormat, ImagePromptOptions } from './imagePromptBuilder';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Initialize OpenAI client lazily to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    const apiKey = process.env.OPENAI_API_KEY || 'build-placeholder-key';
+    openaiInstance = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+  return openaiInstance;
+}
 
 export interface BlogImagePosition {
   position: number;
@@ -59,7 +68,7 @@ export async function generateBlogImages(
       const prompt = buildImagePrompt(promptOptions);
 
       // Generate image using DALL-E 3 for better quality (blogs are important content)
-      const response = await openai.images.generate({
+      const response = await getOpenAI().images.generate({
         model: 'dall-e-3',
         prompt: prompt,
         size: '1024x1024',
