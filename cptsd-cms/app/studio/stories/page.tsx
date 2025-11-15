@@ -100,7 +100,7 @@ export default async function StoriesPage({
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 ml-4 flex-wrap">
                     <Link
                       href={`/studio/stories/${story.id}`}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -126,6 +126,26 @@ export default async function StoriesPage({
                           </button>
                         </form>
                       </>
+                    )}
+                    {status === StoryStatus.APPROVED && (
+                      <form action={`/studio/stories/${story.id}/hide`} method="post">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm font-medium"
+                        >
+                          Hide
+                        </button>
+                      </form>
+                    )}
+                    {status === StoryStatus.REJECTED && (
+                      <form action={`/studio/stories/${story.id}/unhide`} method="post">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                        >
+                          Unhide
+                        </button>
+                      </form>
                     )}
                   </div>
                 </div>

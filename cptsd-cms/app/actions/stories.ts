@@ -200,3 +200,98 @@ export async function updateStory(id: string, formData: FormData) {
   }
 }
 
+export async function deleteStory(id: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    await connectDB();
+
+    const story = await Story.findByIdAndDelete(id);
+    if (!story) {
+      return { success: false, error: 'Story not found' };
+    }
+
+    revalidatePath('/studio/stories');
+    revalidatePath('/stories');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting story:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete story',
+    };
+  }
+}
+
+export async function hideStory(id: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    await connectDB();
+
+    const story = await Story.findById(id);
+    if (!story) {
+      return { success: false, error: 'Story not found' };
+    }
+
+    // Change status to REJECTED to hide it from public view
+    story.status = StoryStatus.REJECTED;
+    await story.save();
+
+    revalidatePath(`/studio/stories/${id}`);
+    revalidatePath('/studio/stories');
+    revalidatePath('/stories');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error hiding story:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to hide story',
+    };
+  }
+}
+
+export async function unhideStory(id: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    await connectDB();
+
+    const story = await Story.findById(id);
+    if (!story) {
+      return { success: false, error: 'Story not found' };
+    }
+
+    // Change status back to APPROVED to show it publicly
+    story.status = StoryStatus.APPROVED;
+    if (!story.approvedAt) {
+      story.approvedAt = new Date();
+      story.approvedBy = session.user.email || session.user.id;
+    }
+    await story.save();
+
+    revalidatePath(`/studio/stories/${id}`);
+    revalidatePath('/studio/stories');
+    revalidatePath('/stories');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error unhiding story:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to unhide story',
+    };
+  }
+}
+

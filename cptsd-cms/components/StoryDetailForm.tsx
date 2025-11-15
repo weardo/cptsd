@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { approveStory, rejectStory } from '@/app/actions/stories';
+import { approveStory, rejectStory, deleteStory, hideStory, unhideStory } from '@/app/actions/stories';
 
 interface Story {
   id: string;
@@ -73,6 +73,45 @@ export default function StoryDetailForm({ story }: { story: Story }) {
       router.push('/studio/stories?status=REJECTED');
     } else {
       alert(result.error || 'Failed to reject story');
+    }
+    setIsSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this story permanently? This action cannot be undone.')) return;
+
+    setIsSaving(true);
+    const result = await deleteStory(story.id);
+    if (result.success) {
+      router.push('/studio/stories');
+    } else {
+      alert(result.error || 'Failed to delete story');
+    }
+    setIsSaving(false);
+  };
+
+  const handleHide = async () => {
+    if (!confirm('Hide this story from public view? It will be moved to rejected status.')) return;
+
+    setIsSaving(true);
+    const result = await hideStory(story.id);
+    if (result.success) {
+      router.refresh();
+      alert('Story hidden successfully');
+    } else {
+      alert(result.error || 'Failed to hide story');
+    }
+    setIsSaving(false);
+  };
+
+  const handleUnhide = async () => {
+    setIsSaving(true);
+    const result = await unhideStory(story.id);
+    if (result.success) {
+      router.refresh();
+      alert('Story unhidden and approved');
+    } else {
+      alert(result.error || 'Failed to unhide story');
     }
     setIsSaving(false);
   };
@@ -151,7 +190,7 @@ export default function StoryDetailForm({ story }: { story: Story }) {
           <p className="text-xs text-gray-500 mt-1">{body.length} characters</p>
         </div>
 
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
           <button
             type="submit"
             disabled={isSaving}
@@ -180,6 +219,37 @@ export default function StoryDetailForm({ story }: { story: Story }) {
               </button>
             </>
           )}
+
+          {story.status === 'APPROVED' && (
+            <button
+              type="button"
+              onClick={handleHide}
+              disabled={isSaving}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50"
+            >
+              Hide
+            </button>
+          )}
+
+          {story.status === 'REJECTED' && (
+            <button
+              type="button"
+              onClick={handleUnhide}
+              disabled={isSaving}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
+            >
+              Unhide & Approve
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isSaving}
+            className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium disabled:opacity-50 ml-auto"
+          >
+            Delete
+          </button>
         </div>
       </form>
     </div>
