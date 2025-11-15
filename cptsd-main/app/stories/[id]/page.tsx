@@ -5,8 +5,9 @@ import Link from 'next/link';
 // Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
 
-export default async function StoryDetailPage({ params }: { params: { id: string } }) {
-  const story = await getStoryById(params.id);
+export default async function StoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const story = await getStoryById(id);
 
   if (!story) {
     notFound();
