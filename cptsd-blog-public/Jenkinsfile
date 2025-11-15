@@ -99,23 +99,21 @@ pipeline {
                         fi
                         
                         # Load environment variables from .env or .env.local files
-                        # Priority: repository .env.local > repository .env > deployment .env > Jenkins env vars
+                        # Priority: deployment .env > Jenkins env vars
+                        # Note: We're already in /opt/cptsd-blog-public directory after cd
                         ENV_FILE=""
                         
-                        if [ -f cptsd-blog-public/.env.local ]; then
-                            ENV_FILE="cptsd-blog-public/.env.local"
-                            echo "Loading environment variables from .env.local (repository)"
-                        elif [ -f cptsd-blog-public/.env ]; then
-                            ENV_FILE="cptsd-blog-public/.env"
-                            echo "Loading environment variables from .env (repository)"
+                        if [ -f .env.local ]; then
+                            ENV_FILE=".env.local"
+                            echo "Loading environment variables from .env.local (deployment directory)"
                         elif [ -f .env ]; then
                             ENV_FILE=".env"
                             echo "Loading environment variables from .env (deployment directory)"
                         else
-                            echo "No .env file found. Using Jenkins environment variables if set"
+                            echo "No .env file found in deployment directory. Using Jenkins environment variables if set"
                         fi
                         
-                        if [ -n "\$ENV_FILE" ]; then
+                        if [ -n "\$ENV_FILE" ] && [ -f "\$ENV_FILE" ]; then
                             set -a
                             . "\$ENV_FILE"
                             set +a
