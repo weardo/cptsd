@@ -53,7 +53,7 @@ pipeline {
                             
                             if [ -n "\$ENV_FILE" ]; then
                                 set -a
-                                source "\$ENV_FILE"
+                                . "\$ENV_FILE"
                                 set +a
                             fi
                             
@@ -117,7 +117,7 @@ pipeline {
                         
                         if [ -n "\$ENV_FILE" ]; then
                             set -a
-                            source "\$ENV_FILE"
+                            . "\$ENV_FILE"
                             set +a
                         fi
                         
