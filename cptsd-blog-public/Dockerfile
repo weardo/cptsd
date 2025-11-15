@@ -8,7 +8,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Suppress deprecation warnings (they're harmless but noisy)
+RUN npm ci --loglevel=warn
 
 # Rebuild the source code only when needed
 FROM base AS builder
