@@ -1,0 +1,26 @@
+# Production override for blog.cptsd.in deployment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  app:
+    # Remove port mapping if using reverse proxy (nginx/caddy)
+    # ports:
+    #   - '3001:3001'
+    environment:
+      NODE_ENV: production
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  mongodb:
+    # For production, can use external MongoDB or shared volume
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+

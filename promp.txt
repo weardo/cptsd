@@ -1,0 +1,231 @@
+You are an expert full-stack engineer helping me build a production-ready content management web app for a CPTSD awareness project.
+
+High-level goal
+---------------
+Build a small but robust web application that lets me:
+
+1. Create, organize, and review content ideas for an anonymous CPTSD awareness brand (Indian audience).
+2. Attach my “Finch” character screenshots to posts and keep everything versioned and searchable.
+3. Only call n8n for a **single heavy AI generation pipeline**, to minimize n8n workflow executions per month.
+4. Do all **CRUD operations (posts, topics, tags, status changes, browsing, search)** locally in this app without touching n8n.
+5. Host this app on the **same server** where my self-hosted n8n is running (e.g., via Docker Compose).
+
+Architecture & constraints
+--------------------------
+- Frontend + backend in one codebase using:
+  - **Next.js** (latest stable) with **TypeScript**
+  - **App Router** and **Server Actions / Route Handlers** for backend logic
+  - **Tailwind CSS** for styling, simple clean UI (no heavy component library)
+- Database:
+  - Use **Postgres** via **Prisma ORM**
+  - Assume Postgres is running in Docker (we'll add a docker-compose service later).
+- File storage:
+  - Assume **S3-compatible storage** (e.g., MinIO, DO Spaces, R2).
+  - Use a minimal S3 client (e.g., @aws-sdk/client-s3) to upload and generate public URLs.
+- Authentication:
+  - Keep it simple for MVP:
+    - Either passwordless single-user auth (shared secret in env) or 
+    - NextAuth with simple email/password.
+  - This app is mostly admin-side; no public signup needed for now.
+- n8n integration:
+  - Treat n8n as an external service with a **single webhook endpoint**:
+    - `POST ${N8N_BASE_URL}/webhook/generate-content`
+  - This webhook will:
+    - Take structured JSON (topic, post_type, raw_idea, tone, optional Finch image URL).
+    - Orchestrate OpenAI + image generation + zipping on the n8n side.
+    - Return structured JSON with:
+      - `script`
+      - `caption`
+      - `hashtags` (array)
+      - `ai_background_urls` (array of image URLs)
+      - `zip_url` (download bundle)
+  - The app should **only call this webhook when the user explicitly clicks “Generate with AI”** on a post.
+  - Everything else (CRUD, search, editing fields manually) must be done in the app without n8n.
+
+Data model
+----------
+Use Prisma to define at least these models:
+
+- Topic
+  - id (string/uuid)
+  - name (string)
+  - slug (string, unique)
+  - description (optional)
+  - createdAt, updatedAt
+
+- Post
+  - id (string/uuid)
+  - topicId (FK -> Topic)
+  - postType (enum: CAROUSEL, REEL, STORY, MEME)
+  - status (enum: DRAFT, GENERATED, APPROVED, POSTED)
+  - rawIdea (text) – what I initially type
+  - script (text) – full script for carousel/reel once generated
+  - caption (text)
+  - hashtags (text) – can store as space-separated or JSON string
+  - finchScreenshotUrl (string, optional)
+  - aiBackgroundUrls (Json, optional) – array of URLs
+  - zipUrl (string, optional)
+  - platforms (Json, optional) – e.g. ["instagram","whatsapp","youtube-short"]
+  - createdAt, updatedAt
+
+- Asset (optional, if it simplifies things)
+  - id
+  - postId (FK to Post)
+  - type (enum: FINCH_SCREENSHOT, BACKGROUND, OTHER)
+  - url (string)
+  - meta (Json)
+  - createdAt
+
+Focus on getting Topic + Post working; Asset can be added later.
+
+Core features
+-------------
+1) Topic management (local only, no n8n)
+   - List all topics
+   - Create/edit/delete topic
+   - Slug auto-generated from name
+   - Simple UI: table with name, slug, description, counts of posts
+
+2) Post management (local only by default)
+   - Page to create a new Post:
+     - Select Topic (dropdown)
+     - Select Post Type (CAROUSEL / REEL / STORY / MEME)
+     - Status default = DRAFT
+     - Textarea for rawIdea
+     - Optional file upload for Finch screenshot:
+       - Upload to S3
+       - Save resulting URL into finchScreenshotUrl
+   - Ability to manually edit:
+     - script
+     - caption
+     - hashtags
+   - Ability to change status manually (dropdown: DRAFT, GENERATED, APPROVED, POSTED).
+
+3) Integration with n8n “generate content” webhook (minimize executions)
+   - On the Post detail page, add a button: **“Generate with AI (n8n)”**.
+   - Clicking it should:
+     - Call a server route/Server Action that performs:
+       - POST to `${N8N_BASE_URL}/webhook/generate-content` with JSON:
+         {
+           postId,
+           topicSlug/name,
+           postType,
+           rawIdea,
+           tone: one of ["educational","validating","gentle-cta"],
+           finchScreenshotUrl
+         }
+       - Wait for response JSON:
+         {
+           script,
+           caption,
+           hashtags: string[] | string,
+           ai_background_urls?: string[],
+           zip_url?: string
+         }
+     - Update the Post row:
+       - script, caption, hashtags, aiBackgroundUrls, zipUrl
+       - status = GENERATED
+   - Handle errors gracefully and show messages to the user.
+   - This is **the only required n8n call**; all CRUD must be fully functional if n8n is down.
+
+4) Dashboard & browsing
+   - Home page: list of recent posts:
+     - filters: topic, postType, status
+     - search by rawIdea/script/caption text
+   - Each row shows:
+     - Topic, Post Type, Status, createdAt
+     - A small thumbnail (Finch screenshot or first aiBackgroundUrl if present)
+   - Clicking a row goes to Post detail page.
+
+5) Post detail page
+   - Show:
+     - topic, type, status
+     - Finch screenshot preview (if any)
+     - script (editable textarea)
+     - caption (editable textarea)
+     - hashtags (editable textarea or tags UI)
+     - links:
+       - ai background image URLs
+       - zipUrl with “Download bundle” button (opens new tab)
+   - Actions:
+     - “Generate with AI (n8n)” (only if status is DRAFT or needs regeneration)
+     - “Mark as Approved”
+     - “Mark as Posted”
+   - Automatically save edits (or explicit Save button with mutation).
+
+6) Authentication (minimal)
+   - Simple login page:
+     - Single admin user configured via env (ADMIN_EMAIL, ADMIN_PASSWORD) OR
+     - Very lightweight auth (e.g., next-auth credentials provider).
+   - All routes except login should be protected.
+
+7) Styling
+   - Use Tailwind with a simple, calm UI:
+     - neutral background, card layout
+     - no dark theme needed for MVP
+   - Make forms accessible and keyboard-friendly.
+
+Environment configuration
+-------------------------
+Expect an `.env` file with (at least):
+
+- DATABASE_URL (for Postgres + Prisma)
+- S3_ENDPOINT
+- S3_REGION
+- S3_ACCESS_KEY_ID
+- S3_SECRET_ACCESS_KEY
+- S3_BUCKET_NAME
+- N8N_BASE_URL   (e.g., https://automation.mydomain.com)
+- ADMIN_EMAIL
+- ADMIN_PASSWORD  (if using basic credential auth)
+
+You should create a small `config` helper to read and validate env vars at startup (e.g. using `zod`).
+
+Implementation approach
+-----------------------
+1) Initialize Next.js + TypeScript + Tailwind.
+2) Set up Prisma with the models defined above and a migration.
+3) Implement S3 upload util + simple React file input that calls a Server Action/route to upload Finch screenshot and return URL.
+4) Implement Topic CRUD:
+   - /topics (list + create)
+   - /topics/[id] (edit/delete)
+5) Implement Post CRUD:
+   - /posts/new
+   - /posts/[id] with edit form and Finch upload
+6) Implement server-side API/Server Action that calls the n8n webhook:
+   - Use fetch with proper error handling and timeouts.
+   - Update Post on success.
+7) Build dashboard/home page with filters and search.
+8) Add simple authentication wrapper and protect all routes.
+
+Important constraints
+---------------------
+- **Do NOT** design the app so that every small action calls n8n.
+  - n8n should only be used for the one AI generation pipeline described above.
+  - All other CRUD and browsing is standard web app logic using Prisma + Postgres.
+- Keep code modular and well-typed (TypeScript everywhere).
+- Prefer Server Components / Server Actions over a separate REST API layer where practical, but keep the architecture clear.
+- Add minimal logging and error boundaries so I can debug issues when deploying.
+
+What I want you (Cursor) to do
+------------------------------
+1. Scaffold the project structure and core dependencies.
+2. Generate the Prisma schema and first migration.
+3. Implement key pages and components:
+   - Login
+   - Topics list/create/edit
+   - Posts list with filters/search
+   - Post detail with Finch upload + “Generate with AI (n8n)” button.
+4. Provide helper modules for:
+   - S3 uploads
+   - n8n webhook call
+   - env config validation
+5. Write clear comments where I need to plug in:
+   - actual S3 bucket details
+   - actual N8N_BASE_URL
+6. As you generate code, keep everything production-oriented:
+   - avoid hard-coding secrets
+   - handle failures gracefully
+   - keep functions small and testable.
+
+Start by summarizing the architecture you’ll implement, then begin scaffolding the Next.js + Prisma project and show me the initial file tree and schema.

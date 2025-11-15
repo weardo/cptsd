@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      # Database - Self-hosted MongoDB (with authentication)
+      # Set MONGODB_URI in .env file, or it will use defaults below
+      # Format: mongodb://username:password@mongodb:27017/cptsd-cms?authSource=admin
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
+
+      # S3 Configuration - Connect to MinIO service
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-cptsd-cms}
+
+      # OpenAI Configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Authentication
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      # NextAuth
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/api/init',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5' # Optimized for CX23 (2 vCPU total)
+          memory: 2G # Optimized for CX23 (4GB total RAM)
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # MongoDB - Self-hosted (using local volumes, no separate Hetzner volume needed for small deployments)
+  mongodb:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - '127.0.0.1:27017:27017' # Only expose on localhost for security
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+      MONGO_INITDB_DATABASE: cptsd-cms
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test:
+        ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping").ok', '--quiet']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M # Optimized for CX23 (4GB total RAM)
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # MinIO for S3-compatible file storage
+  minio:
+    image: minio/minio:latest
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+volumes:
+  # Local volumes use server's 40GB storage (included, no extra cost)
+  # For $4/month CX23: 40GB is sufficient for MongoDB + MinIO initially
+  # Consider Hetzner Cloud Volumes later if you grow beyond 30GB data
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

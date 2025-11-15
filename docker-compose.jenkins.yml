@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    restart: always
+    user: root
+    ports:
+      - '127.0.0.1:8080:8080'  # Only expose on localhost, use reverse proxy
+      - '50000:50000'
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - /opt/cptsd-cms:/opt/cptsd-cms:rw  # Read-write access for deployments
+      - /opt/cptsd-blog-public:/opt/cptsd-blog-public:rw  # Read-write access for deployments
+    environment:
+      - JENKINS_OPTS=--httpPort=8080
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  jenkins_home:
+    driver: local
+
+networks:
+  app-network:
+    external: true
+    name: cptsd-cms_app-network
+

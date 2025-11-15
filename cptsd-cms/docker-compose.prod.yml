@@ -1,0 +1,44 @@
+# Production override for Hetzner deployment
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  app:
+    # Remove port mapping if using reverse proxy (nginx/traefik)
+    # ports:
+    #   - '3000:3000'
+    # Uncomment and configure if using Hetzner Cloud Volumes
+    # volumes:
+    #   - /mnt/hetzner-volumes/app:/app/uploads
+    environment:
+      NODE_ENV: production
+      # Update NEXTAUTH_URL to your domain
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  mongodb:
+    # For production, consider using Hetzner Cloud Volumes
+    # volumes:
+    #   - /mnt/hetzner-volumes/mongodb:/data/db
+    #   - /mnt/hetzner-volumes/mongodb-config:/data/configdb
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  minio:
+    # For production, consider using Hetzner Cloud Volumes
+    # volumes:
+    #   - /mnt/hetzner-volumes/minio:/data
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+

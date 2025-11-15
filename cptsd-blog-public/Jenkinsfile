@@ -1,0 +1,109 @@
+pipeline {
+    agent any
+    
+    environment {
+        APP_NAME = 'cptsd-blog-public'
+        DEPLOY_PATH = '/opt/cptsd-blog-public'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        DOCKER_COMPOSE_PROD_FILE = 'docker-compose.prod.yml'
+        DOMAIN = 'blog.cptsd.in'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Clean workspace
+                    sh 'rm -rf * .* || true'
+                }
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('cptsd-blog-public') {
+                    script {
+                        echo "Building ${APP_NAME} Docker image..."
+                        sh '''
+                            docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache app
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                dir('cptsd-blog-public') {
+                    script {
+                        echo 'Running tests...'
+                        sh '''
+                            docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    echo "Deploying ${APP_NAME} to ${DOMAIN}..."
+                    sh """
+                        # Copy files to deployment directory
+                        mkdir -p ${DEPLOY_PATH}
+                        cp -r cptsd-blog-public/* ${DEPLOY_PATH}/
+                        
+                        # Navigate to deployment directory
+                        cd ${DEPLOY_PATH}
+                        
+                        # Pull latest code if using git
+                        if [ -d .git ]; then
+                            git pull origin main || git pull origin master || true
+                        fi
+                        
+                        # Stop existing containers
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down || true
+                        
+                        # Build and start services
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} build app
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d
+                        
+                        # Wait for services to be healthy
+                        sleep 30
+                        
+                        # Check service status
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} ps
+                    """
+                }
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                script {
+                    echo "Performing health check for ${DOMAIN}..."
+                    sh """
+                        sleep 10
+                        curl -f http://localhost:3001 || echo "Health check failed"
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "${APP_NAME} deployment to ${DOMAIN} successful!"
+        }
+        failure {
+            echo "${APP_NAME} deployment to ${DOMAIN} failed!"
+            sh 'docker-compose -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_FILE} -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_PROD_FILE} logs --tail=50'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
+

@@ -1,0 +1,206 @@
+{
+  "name": "Generate Content for CPTSD CMS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-content",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "generate-content"
+    },
+    {
+      "parameters": {
+        "operation": "createChatCompletion",
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "content": "You are a content creator specializing in CPTSD awareness. Create engaging, educational, and validating content for social media posts. Focus on providing helpful, compassionate, and informative content that helps people understand and heal from CPTSD."
+            },
+            {
+              "role": "user",
+              "content": "Topic: {{ $json.topicName }}\nPost Type: {{ $json.postType }}\nTone: {{ $json.tone }}\nRaw Idea: {{ $json.rawIdea }}\n\nCreate a detailed script for this content following the tone: {{ $json.tone }}. The script should be engaging, informative, and appropriate for the post type ({{ $json.postType }})."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2000
+        }
+      },
+      "id": "openai-script",
+      "name": "OpenAI Script",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createChatCompletion",
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "content": "You are a social media content creator. Create engaging captions for CPTSD awareness posts that are compassionate, informative, and encourage engagement."
+            },
+            {
+              "role": "user",
+              "content": "Topic: {{ $json.topicName }}\nPost Type: {{ $json.postType }}\nTone: {{ $json.tone }}\nRaw Idea: {{ $json.rawIdea }}\nScript: {{ $('OpenAI Script').item.json.choices[0].message.content }}\n\nCreate a compelling social media caption for this post with tone: {{ $json.tone }}. The caption should be engaging and appropriate for {{ $json.postType }} format."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "id": "openai-caption",
+      "name": "OpenAI Caption",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createChatCompletion",
+        "model": "gpt-3.5-turbo",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "content": "You are a social media expert. Generate relevant hashtags for CPTSD awareness content. Return only a JSON array of hashtag strings, no additional text."
+            },
+            {
+              "role": "user",
+              "content": "Topic: {{ $json.topicName }}\nPost Type: {{ $json.postType }}\nCaption: {{ $('OpenAI Caption').item.json.choices[0].message.content }}\n\nGenerate 10-15 relevant hashtags as a JSON array. Return only the array, example: [\"#CPTSD\", \"#MentalHealth\", \"#Healing\"]"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.5,
+          "maxTokens": 200
+        }
+      },
+      "id": "openai-hashtags",
+      "name": "OpenAI Hashtags",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-credentials",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse hashtags from OpenAI response\nconst hashtagsResponse = $input.item.json.choices[0].message.content.trim();\nlet hashtags;\n\ntry {\n  // Try to parse as JSON array\n  hashtags = JSON.parse(hashtagsResponse);\n  // Ensure it's an array\n  if (!Array.isArray(hashtags)) {\n    throw new Error('Not an array');\n  }\n} catch (e) {\n  // If not JSON, try to extract hashtags from text\n  const hashtagRegex = /#\\w+/g;\n  const matches = hashtagsResponse.match(hashtagRegex);\n  if (matches) {\n    hashtags = matches;\n  } else {\n    // Fallback: split by lines or commas\n    hashtags = hashtagsResponse\n      .split(/[\\n,]/)\n      .map((tag) => tag.trim())\n      .filter((tag) => tag.length > 0 && tag.startsWith('#'));\n  }\n}\n\n// Get script and caption from previous nodes\nconst script = $('OpenAI Script').item.json.choices[0].message.content;\nconst caption = $('OpenAI Caption').item.json.choices[0].message.content;\n\n// Get original webhook data\nconst webhookData = $('Webhook').item.json;\n\nreturn {\n  json: {\n    script: script,\n    caption: caption,\n    hashtags: hashtags,\n    ai_background_urls: [],\n    zip_url: \"\",\n    // Include original data for reference\n    postId: webhookData.postId,\n    topicName: webhookData.topicName,\n    topicSlug: webhookData.topicSlug,\n    postType: webhookData.postType,\n    tone: webhookData.tone\n  }\n};"
+      },
+      "id": "process-response",
+      "name": "Process Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Script": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Caption": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Hashtags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Hashtags": {
+      "main": [
+        [
+          {
+            "node": "Process Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
