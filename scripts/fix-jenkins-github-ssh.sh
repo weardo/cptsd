@@ -22,9 +22,18 @@ docker exec jenkins bash -c "
 
 echo "🔑 Adding GitHub SSH host keys..."
 docker exec jenkins bash -c "
-    ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> /var/jenkins_home/.ssh/known_hosts 2>/dev/null
+    # Add all GitHub host keys
+    ssh-keyscan -t rsa github.com >> /var/jenkins_home/.ssh/known_hosts 2>/dev/null
+    ssh-keyscan -t ecdsa github.com >> /var/jenkins_home/.ssh/known_hosts 2>/dev/null
+    ssh-keyscan -t ed25519 github.com >> /var/jenkins_home/.ssh/known_hosts 2>/dev/null
+    
+    # If ed25519 key scan fails, add it manually
+    if ! grep -q 'github.com.*ed25519' /var/jenkins_home/.ssh/known_hosts 2>/dev/null; then
+        echo 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' >> /var/jenkins_home/.ssh/known_hosts
+    fi
+    
     chmod 600 /var/jenkins_home/.ssh/known_hosts
-    chown -R jenkins:jenkins /var/jenkins_home/.ssh
+    chown -R jenkins:jenkins /var/jenkins_home/.ssh 2>/dev/null || true
 "
 
 echo "✅ GitHub SSH host keys added!"
