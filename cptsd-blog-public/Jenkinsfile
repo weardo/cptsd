@@ -42,7 +42,8 @@ pipeline {
                             # Jenkins Global Properties are already available as environment variables
                             export MONGODB_URI=\${MONGODB_URI:-}
                             
-                            docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache app
+                            # Build image once (will be reused in deploy stage)
+                            docker-compose -f ${DOCKER_COMPOSE_FILE} build app
                         """
                     }
                 }
@@ -87,11 +88,19 @@ pipeline {
                         # Jenkins Global Properties are already available as environment variables
                         export MONGODB_URI=\${MONGODB_URI:-}
                         
-                        # Stop existing containers
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down || true
+                        # Stop and remove existing containers properly (including orphans)
+                        echo "Stopping existing containers..."
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down --remove-orphans || true
                         
-                        # Build and start services
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} build app
+                        # Force remove any containers with conflicting names
+                        echo "Removing any orphaned containers..."
+                        docker rm -f cptsd-blog-public-app-1 2>/dev/null || true
+                        
+                        # The image was already built in the Build stage, so we don't rebuild here
+                        # Docker will use the existing image from the build stage
+                        echo "Using pre-built image from Build stage (no rebuild needed)..."
+                        
+                        # Start services (Docker will use the existing image)
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d
                         
                         # Wait for services to be healthy
