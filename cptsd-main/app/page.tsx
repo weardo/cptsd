@@ -3,6 +3,9 @@ import { getPublishedBlogs, getApprovedStories } from '@/lib/dataActions';
 
 const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
 
+// Force dynamic rendering to fetch data at request time
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const [latestBlogs, stories] = await Promise.all([
     getPublishedBlogs({ limit: 5 }),

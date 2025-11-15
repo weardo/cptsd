@@ -3,6 +3,9 @@ import { getPublishedBlogs } from '@/lib/dataActions';
 
 const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
 
+// Force dynamic rendering to fetch data at request time
+export const dynamic = 'force-dynamic';
+
 export default async function LivePage() {
   // Fetch articles for relevant sections
   const numbArticles = await getPublishedBlogs({ limit: 3, tags: ['numbness', 'sensitivity', 'emotional-regulation'] });

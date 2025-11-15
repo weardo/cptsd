@@ -4,6 +4,9 @@ import { ResourceType } from '@cptsd/db';
 
 const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
 
+// Force dynamic rendering to fetch data at request time
+export const dynamic = 'force-dynamic';
+
 const categoryInfo: Record<string, { name: string; description: string }> = {
   BASICS: {
     name: 'Basics',

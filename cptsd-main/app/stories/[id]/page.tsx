@@ -2,6 +2,9 @@ import { getStoryById } from '@/lib/dataActions';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+// Force dynamic rendering to fetch data at request time
+export const dynamic = 'force-dynamic';
+
 export default async function StoryDetailPage({ params }: { params: { id: string } }) {
   const story = await getStoryById(params.id);
 

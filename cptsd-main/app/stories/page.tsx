@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { getApprovedStories } from '@/lib/dataActions';
 
+// Force dynamic rendering to fetch data at request time
+export const dynamic = 'force-dynamic';
+
 export default async function StoriesPage() {
   const stories = await getApprovedStories();
 

@@ -3,6 +3,9 @@ import { ResourceType } from '@cptsd/db';
 
 const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
 
+// Force dynamic rendering to fetch resources at request time, not build time
+export const dynamic = 'force-dynamic';
+
 export default async function SupportPage() {
   const resources = await getAllResources();
 
