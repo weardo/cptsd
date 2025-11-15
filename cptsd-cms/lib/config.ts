@@ -7,6 +7,7 @@ const envSchema = z.object({
   
   // S3 Configuration
   S3_ENDPOINT: z.string().optional(),
+  S3_PUBLIC_URL: z.string().url().optional(), // Public URL for accessing S3 files (e.g., http://37.27.39.20:9000 or https://storage.example.com)
   S3_REGION: z.string().default('us-east-1'),
   S3_ACCESS_KEY_ID: z.string(),
   S3_SECRET_ACCESS_KEY: z.string(),
@@ -109,6 +110,7 @@ export function getS3Config() {
   const env = getEnv();
   return {
     endpoint: env.S3_ENDPOINT && env.S3_ENDPOINT.length > 0 ? env.S3_ENDPOINT : undefined,
+    publicUrl: env.S3_PUBLIC_URL && env.S3_PUBLIC_URL.length > 0 ? env.S3_PUBLIC_URL : undefined,
     region: env.S3_REGION,
     credentials: {
       accessKeyId: env.S3_ACCESS_KEY_ID,

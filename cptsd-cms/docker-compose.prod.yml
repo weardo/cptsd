@@ -15,6 +15,8 @@ services:
       NODE_ENV: production
       # Update NEXTAUTH_URL to your domain
       NEXTAUTH_URL: ${NEXTAUTH_URL}
+      # Public URL for S3/MinIO access (use server IP or domain)
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://37.27.39.20:9000}
     logging:
       driver: 'json-file'
       options:

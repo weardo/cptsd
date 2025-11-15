@@ -38,8 +38,16 @@ export async function uploadToS3(
   await s3Client.send(command);
   
   // Construct public URL
-  if (s3Config.endpoint) {
-    // For MinIO or custom endpoints
+  // Use S3_PUBLIC_URL if provided (for public access from browser)
+  // Otherwise fall back to endpoint (internal Docker network)
+  if (s3Config.publicUrl) {
+    // Use public URL for browser-accessible files
+    const publicUrl = new URL(s3Config.publicUrl);
+    // Ensure public URL doesn't have trailing slash
+    const baseUrl = publicUrl.origin;
+    return `${baseUrl}/${s3Config.bucket}/${uniqueFileName}`;
+  } else if (s3Config.endpoint) {
+    // For MinIO or custom endpoints (internal Docker network)
     const endpointUrl = new URL(s3Config.endpoint);
     return `${endpointUrl.protocol}//${endpointUrl.host}/${s3Config.bucket}/${uniqueFileName}`;
   } else {
