@@ -15,6 +15,20 @@ const settingsSchema = z.object({
  */
 export async function getSettings() {
   try {
+    // During build time, skip database queries and return defaults
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                        (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI);
+    if (isBuildTime) {
+      return {
+        success: true,
+        settings: {
+          defaultModel: 'gpt-4o',
+          systemPrompt:
+            'You are a content creator specializing in CPTSD awareness. Create engaging, educational, and validating content for social media posts. Focus on providing helpful, compassionate, and informative content that helps people understand and heal from CPTSD.',
+        },
+      };
+    }
+
     await connectDB();
 
     const settings = await Settings.find({}).lean();

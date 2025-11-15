@@ -299,6 +299,13 @@ export async function generateStandaloneContent(formData: FormData) {
  */
 export async function getStandaloneGenerations() {
   try {
+    // During build time, skip database queries and return empty array
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                        (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI);
+    if (isBuildTime) {
+      return { success: true, generations: [] };
+    }
+
     await connectDB();
 
     const generations = await StandaloneGeneration.find()
