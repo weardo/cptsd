@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import GeneratedAsset from '@/models/GeneratedAsset';
 import StandaloneGeneration from '@/models/StandaloneGeneration';
 import Post from '@/models/Post';
+import Blog from '@/models/Blog';
 import Topic from '@/models/Topic';
 import mongoose from 'mongoose';
 
@@ -34,9 +35,10 @@ export default async function GalleryPage({
     query.kind = kind;
   }
 
-  // Fetch all assets with post information
+  // Fetch all assets with post/blog information
   const assets = await GeneratedAsset.find(query)
     .populate('postId')
+    .populate('blogId')
     .sort({ createdAt: -1 })
     .lean();
 
@@ -58,13 +60,48 @@ export default async function GalleryPage({
   const postsResult = await getPosts();
   const posts = postsResult.success ? postsResult.posts : [];
 
-  // Transform post assets for client component
+  // Transform post/blog assets for client component
   const transformedAssets = assets.map((asset: any) => {
     const post = asset.postId as any;
+    const blog = asset.blogId as any;
+    
+    // Determine source and related entity
+    let source: 'post' | 'blog' = 'post';
+    let relatedEntity: any = null;
+    let relatedId = '';
+    
+    if (blog && typeof blog === 'object') {
+      source = 'blog';
+      relatedEntity = {
+        id: blog._id.toString(),
+        _id: blog._id.toString(),
+        title: blog.title || '',
+        slug: blog.slug || '',
+        status: blog.status || '',
+      };
+      relatedId = blog._id.toString();
+    } else if (post && typeof post === 'object') {
+      source = 'post';
+      relatedEntity = {
+        id: post._id.toString(),
+        _id: post._id.toString(),
+        rawIdea: post.rawIdea || '',
+        postType: post.postType,
+        status: post.status,
+      };
+      relatedId = post._id.toString();
+    } else if (asset.postId) {
+      relatedId = typeof asset.postId === 'object' ? asset.postId._id.toString() : asset.postId.toString();
+    } else if (asset.blogId) {
+      source = 'blog';
+      relatedId = typeof asset.blogId === 'object' ? asset.blogId._id.toString() : asset.blogId.toString();
+    }
+    
     return {
       id: asset._id.toString(),
       _id: asset._id.toString(),
-      postId: asset.postId ? (typeof asset.postId === 'object' ? asset.postId._id.toString() : asset.postId.toString()) : '',
+      postId: relatedId,
+      blogId: source === 'blog' ? relatedId : '',
       kind: asset.kind,
       size: asset.size,
       url: asset.url,
@@ -77,14 +114,9 @@ export default async function GalleryPage({
         slideDescription: asset.metadata.slideDescription,
         generationParams: asset.metadata.generationParams,
       } : null,
-      post: post && typeof post === 'object' ? {
-        id: post._id.toString(),
-        _id: post._id.toString(),
-        rawIdea: post.rawIdea || '',
-        postType: post.postType,
-        status: post.status,
-      } : null,
-      source: 'post' as const,
+      post: source === 'post' ? relatedEntity : null,
+      blog: source === 'blog' ? relatedEntity : null,
+      source,
       createdAt: asset.createdAt instanceof Date 
         ? asset.createdAt.toISOString() 
         : typeof asset.createdAt === 'string' 

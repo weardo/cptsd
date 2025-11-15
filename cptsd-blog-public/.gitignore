@@ -36,23 +36,14 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+next-env.d.ts
+
 # Docker
 *.tar.gz
 docker-compose.override.yml
-
-# Jenkins
-.jenkins/
-
-# Secrets
-*.pem
-*.key
-*.crt
-secrets/
-
-# Backups
-backups/
-*.backup
-*.bak
 
 # Temporary files
 tmp/
@@ -63,11 +54,3 @@ temp/
 logs/
 *.log
 
-# Database
-*.db
-*.sqlite
-
-# Build artifacts
-*.tar
-*.zip
-*.tsbuildinfo

@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBlog, transcribeAndGenerateBlog, searchBlogStockImages, generateBlogTopicsAI } from '@/app/actions/blogs';
+import { createBlog, transcribeAndGenerateBlog, searchBlogStockImages, generateBlogTopicsAI, generateBlogFromTopic } from '@/app/actions/blogs';
+import { uploadBlogImage } from '@/app/actions/uploads';
 
 type Topic = {
   id: string;
@@ -30,13 +31,21 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
   const [error, setError] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState(initialBlog?.youtubeUrl || '');
   const [generating, setGenerating] = useState(false);
-  const [mode, setMode] = useState<'manual' | 'youtube'>('youtube');
+  const [mode, setMode] = useState<'manual' | 'youtube' | 'topic'>('youtube');
   const [tone, setTone] = useState<'educational' | 'validating' | 'gentle' | 'hopeful' | 'grounding'>('gentle');
-  const [imageSource, setImageSource] = useState<ImageSource>('generate');
+  const [imageSource, setImageSource] = useState<ImageSource>('none');
+  const [generateImage, setGenerateImage] = useState(false);
   const [rephrase, setRephrase] = useState(false);
   const [summarize, setSummarize] = useState(false);
   const [customContent, setCustomContent] = useState(initialBlog?.customContent || '');
   const [showTopicGenerator, setShowTopicGenerator] = useState(false);
+
+  // Auto-show topic generator when in topic mode
+  useEffect(() => {
+    if (mode === 'topic') {
+      setShowTopicGenerator(true);
+    }
+  }, [mode]);
   const [topicTheme, setTopicTheme] = useState('');
   const [generatingTopics, setGeneratingTopics] = useState(false);
   const [generatedTopics, setGeneratedTopics] = useState<any[]>([]);
@@ -46,6 +55,9 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
   const [searchingImages, setSearchingImages] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 5, message: '', step: 0 });
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ url: string; alt: string }>>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [copiedImageIndex, setCopiedImageIndex] = useState<number | null>(null);
 
   // Steps for blog generation
   const steps = [
@@ -121,7 +133,7 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
       startTransition(async () => {
         const result = await transcribeAndGenerateBlog(youtubeUrl, {
           tone,
-          includeImages: imageSource !== 'none',
+          includeImages: generateImage,
           rephrase,
           summarize,
           customContent: customContent && customContent.trim() ? customContent.trim() : undefined,
@@ -139,6 +151,9 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
           setProgress({ current: 0, total: 5, message: '', step: 0 });
         }
       });
+    } else if (mode === 'topic') {
+      // Topic mode - handled by handleGenerateFromTopic
+      setError('Please select a topic from the generated topics below and click "Generate Blog"');
     } else {
       // Manual creation
       const formData = new FormData(e.currentTarget);
@@ -152,6 +167,36 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
         }
       });
     }
+  };
+
+  const handleGenerateFromTopic = async (topic: any) => {
+    setError('');
+    setGenerating(true);
+    
+    startTransition(async () => {
+      const result = await generateBlogFromTopic(
+        topic.title,
+        topic.description,
+        {
+          keyPoints: topic.keyPoints || [],
+          tone,
+          includeImages: generateImage,
+          customContent: customContent && customContent.trim() ? customContent.trim() : undefined,
+        }
+      );
+
+      if (result.success && result.blog) {
+        setProgress({ current: 100, total: 100, message: 'Complete!', step: steps.length - 1 });
+        setTimeout(() => {
+          router.push(`/blogs/${result.blog.id}`);
+          router.refresh();
+        }, 500);
+      } else {
+        setError(result.error || 'Failed to generate blog from topic');
+        setGenerating(false);
+        setProgress({ current: 0, total: 5, message: '', step: 0 });
+      }
+    });
   };
 
   const handleGenerateTopics = async () => {
@@ -196,6 +241,49 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
     } finally {
       setSearchingImages(false);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const result = await uploadBlogImage(formData);
+
+      if (result.success && result.url) {
+        const altText = file.name.replace(/\.[^/.]+$/, ''); // Remove extension for alt text
+        setUploadedImages([...uploadedImages, { url: result.url, alt: altText }]);
+      } else {
+        setError(result.error || 'Failed to upload image');
+      }
+    } catch (err) {
+      setError('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
+  const copyImageEmbed = async (url: string, alt: string, index: number) => {
+    const embedCode = `![${alt}](${url})`;
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopiedImageIndex(index);
+      setTimeout(() => setCopiedImageIndex(null), 2000);
+    } catch (err) {
+      setError('Failed to copy to clipboard');
+    }
+  };
+
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages(uploadedImages.filter((_, i) => i !== index));
   };
 
   return (
@@ -266,7 +354,7 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                 name="mode"
                 value="youtube"
                 checked={mode === 'youtube'}
-                onChange={(e) => setMode(e.target.value as 'youtube' | 'manual')}
+                onChange={(e) => setMode(e.target.value as 'youtube' | 'manual' | 'topic')}
                 className="mr-2"
               />
               From YouTube Video
@@ -275,9 +363,20 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
               <input
                 type="radio"
                 name="mode"
+                value="topic"
+                checked={mode === 'topic'}
+                onChange={(e) => setMode(e.target.value as 'youtube' | 'manual' | 'topic')}
+                className="mr-2"
+              />
+              From Topic (AI)
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="mode"
                 value="manual"
                 checked={mode === 'manual'}
-                onChange={(e) => setMode(e.target.value as 'youtube' | 'manual')}
+                onChange={(e) => setMode(e.target.value as 'youtube' | 'manual' | 'topic')}
                 className="mr-2"
               />
               Manual Entry
@@ -285,7 +384,71 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
           </div>
         </div>
 
-        {mode === 'youtube' ? (
+        {mode === 'topic' ? (
+          <>
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <p className="text-sm text-blue-800 mb-4">
+                Generate blog topics using AI, then select a topic to generate a complete blog post.
+              </p>
+            </div>
+
+            {/* Advanced Options for Topic Mode */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-semibold text-sm">Advanced Options</h3>
+
+              {/* Tone Selection */}
+              <div>
+                <label htmlFor="tone" className="block text-sm font-medium mb-2">
+                  Tone
+                </label>
+                <select
+                  id="tone"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value as any)}
+                  className="input w-full"
+                >
+                  <option value="gentle">Gentle</option>
+                  <option value="educational">Educational</option>
+                  <option value="validating">Validating</option>
+                  <option value="hopeful">Hopeful</option>
+                  <option value="grounding">Grounding</option>
+                </select>
+              </div>
+
+              {/* Generate Image Option */}
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={generateImage}
+                    onChange={(e) => setGenerateImage(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">Generate AI Image (one image will be generated)</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1 ml-6">
+                  When enabled, one AI-generated image will be created and inserted into the blog post.
+                </p>
+              </div>
+
+              {/* Custom Content */}
+              <div>
+                <label htmlFor="customContent" className="block text-sm font-medium mb-2">
+                  Additional Content (Optional)
+                </label>
+                <textarea
+                  id="customContent"
+                  name="customContent"
+                  value={customContent}
+                  onChange={(e) => setCustomContent(e.target.value)}
+                  rows={4}
+                  placeholder="Add any additional content you want to include in the blog post..."
+                  className="input w-full"
+                />
+              </div>
+            </div>
+          </>
+        ) : mode === 'youtube' ? (
           <>
             <div>
               <label htmlFor="youtubeUrl" className="block text-sm font-medium mb-2">
@@ -329,96 +492,21 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                 </select>
               </div>
 
-              {/* Image Source */}
+              {/* Generate Image Option */}
               <div>
-                <label className="block text-sm font-medium mb-2">Image Source</label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="imageSource"
-                      value="generate"
-                      checked={imageSource === 'generate'}
-                      onChange={(e) => setImageSource(e.target.value as ImageSource)}
-                      className="mr-2"
-                    />
-                    AI Generate
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="imageSource"
-                      value="stock"
-                      checked={imageSource === 'stock'}
-                      onChange={(e) => setImageSource(e.target.value as ImageSource)}
-                      className="mr-2"
-                    />
-                    Stock Images
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="imageSource"
-                      value="none"
-                      checked={imageSource === 'none'}
-                      onChange={(e) => setImageSource(e.target.value as ImageSource)}
-                      className="mr-2"
-                    />
-                    No Images
-                  </label>
-                </div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={generateImage}
+                    onChange={(e) => setGenerateImage(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">Generate AI Image (one image will be generated)</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1 ml-6">
+                  When enabled, one AI-generated image will be created and inserted into the blog post.
+                </p>
               </div>
-
-              {/* Stock Image Search */}
-              {imageSource === 'stock' && (
-                <div className="border rounded p-3 bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">Search Stock Images</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowStockImageSearch(!showStockImageSearch)}
-                      className="text-xs text-blue-600"
-                    >
-                      {showStockImageSearch ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  {showStockImageSearch && (
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={stockImageQuery}
-                          onChange={(e) => setStockImageQuery(e.target.value)}
-                          placeholder="e.g., calm nature, peaceful landscape"
-                          className="input flex-1 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSearchStockImages}
-                          disabled={searchingImages}
-                          className="btn btn-secondary text-sm"
-                        >
-                          {searchingImages ? 'Searching...' : 'Search'}
-                        </button>
-                      </div>
-                      {stockImages.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-                          {stockImages.map((img) => (
-                            <div key={img.id} className="relative">
-                              <img
-                                src={img.thumbnailUrl}
-                                alt={img.alt}
-                                className="w-full h-20 object-cover rounded"
-                              />
-                              <p className="text-xs text-gray-600 truncate mt-1">{img.photographer}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Content Options */}
               <div className="space-y-2">
@@ -457,6 +545,76 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                   className="input w-full"
                 />
               </div>
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-semibold text-sm">Upload Images</h3>
+              <p className="text-xs text-gray-500">
+                Upload images to use in your blog post. Copy the embed code and paste it into your content.
+              </p>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Upload Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="input w-full"
+                />
+                {uploadingImage && (
+                  <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+                )}
+              </div>
+
+              {uploadedImages.length > 0 && (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Uploaded Images</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {uploadedImages.map((img, index) => (
+                      <div
+                        key={index}
+                        className="border rounded-lg p-3 bg-gray-50 space-y-2"
+                      >
+                        <div className="relative aspect-video bg-gray-200 rounded overflow-hidden">
+                          <img
+                            src={img.url}
+                            alt={img.alt}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 truncate flex-1 mr-2">
+                            {img.alt}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyImageEmbed(img.url, img.alt, index)}
+                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          >
+                            {copiedImageIndex === index ? 'Copied!' : 'Copy Embed'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedImage(index)}
+                            className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ml-1"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500 font-mono break-all">
+                          <code className="bg-gray-100 px-1 py-0.5 rounded">
+                            ![{img.alt}]({img.url})
+                          </code>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -507,6 +665,76 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                 placeholder="Write your blog post content here (Markdown supported)..."
               />
             </div>
+
+            {/* Image Upload Section for Manual Mode */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="font-semibold text-sm">Upload Images</h3>
+              <p className="text-xs text-gray-500">
+                Upload images to use in your blog post. Copy the embed code and paste it into your content above.
+              </p>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Upload Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="input w-full"
+                />
+                {uploadingImage && (
+                  <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+                )}
+              </div>
+
+              {uploadedImages.length > 0 && (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Uploaded Images</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {uploadedImages.map((img, index) => (
+                      <div
+                        key={index}
+                        className="border rounded-lg p-3 bg-gray-50 space-y-2"
+                      >
+                        <div className="relative aspect-video bg-gray-200 rounded overflow-hidden">
+                          <img
+                            src={img.url}
+                            alt={img.alt}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 truncate flex-1 mr-2">
+                            {img.alt}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyImageEmbed(img.url, img.alt, index)}
+                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          >
+                            {copiedImageIndex === index ? 'Copied!' : 'Copy Embed'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedImage(index)}
+                            className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ml-1"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500 font-mono break-all">
+                          <code className="bg-gray-100 px-1 py-0.5 rounded">
+                            ![{img.alt}]({img.url})
+                          </code>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -514,15 +742,17 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
         <div className="border rounded-lg p-4 bg-gray-50">
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-medium">AI Topic Generator</label>
-            <button
-              type="button"
-              onClick={() => setShowTopicGenerator(!showTopicGenerator)}
-              className="text-xs text-blue-600"
-            >
-              {showTopicGenerator ? 'Hide' : 'Show'}
-            </button>
+            {mode !== 'topic' && (
+              <button
+                type="button"
+                onClick={() => setShowTopicGenerator(!showTopicGenerator)}
+                className="text-xs text-blue-600"
+              >
+                {showTopicGenerator ? 'Hide' : 'Show'}
+              </button>
+            )}
           </div>
-          {showTopicGenerator && (
+          {(showTopicGenerator || mode === 'topic') && (
             <div className="space-y-2">
               <div className="flex gap-2">
                 <input
@@ -542,17 +772,55 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                 </button>
               </div>
               {generatedTopics.length > 0 && (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {generatedTopics.map((topic, idx) => (
-                    <div key={idx} className="border rounded p-2 bg-white">
-                      <h4 className="font-medium text-sm">{topic.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1">{topic.description}</p>
+                    <div key={idx} className="border rounded p-3 bg-white space-y-2">
+                      <div>
+                        <h4 className="font-medium text-sm">{topic.title}</h4>
+                        <p className="text-xs text-gray-600 mt-1">{topic.description}</p>
+                      </div>
+                      {topic.keyPoints && topic.keyPoints.length > 0 && (
+                        <div className="text-xs">
+                          <span className="font-medium text-gray-700">Key Points:</span>
+                          <ul className="list-disc list-inside mt-1 text-gray-600">
+                            {topic.keyPoints.slice(0, 3).map((point: string, pointIdx: number) => (
+                              <li key={pointIdx}>{point}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1 mt-2">
                         {topic.suggestedTags?.slice(0, 5).map((tag: string, tagIdx: number) => (
                           <span key={tagIdx} className="text-xs bg-gray-100 px-2 py-1 rounded">
                             {tag}
                           </span>
                         ))}
+                      </div>
+                      <div className="flex gap-2 mt-2 pt-2 border-t">
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateFromTopic(topic)}
+                          disabled={generating}
+                          className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          Generate Blog
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode('manual');
+                            // Pre-fill the form with topic details
+                            const titleInput = document.getElementById('title') as HTMLInputElement;
+                            const contentInput = document.getElementById('content') as HTMLTextAreaElement;
+                            if (titleInput) titleInput.value = topic.title;
+                            if (contentInput) {
+                              contentInput.value = `# ${topic.title}\n\n${topic.description}\n\n${topic.keyPoints?.map((p: string) => `- ${p}`).join('\n') || ''}`;
+                            }
+                          }}
+                          className="text-xs px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                        >
+                          Use in Manual Mode
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -572,6 +840,8 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
               ? 'Generating Blog...'
               : mode === 'youtube'
               ? 'Generate from YouTube'
+              : mode === 'topic'
+              ? 'Generate Topics First'
               : initialBlog
               ? 'Update Blog'
               : 'Create Blog'}

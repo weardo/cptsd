@@ -11,6 +11,8 @@ import { generateBlogImages, insertBlogImagesIntoContent } from '@/lib/blogImage
 import { ensureUniqueSlug } from '@/lib/utils/slug';
 import { searchStockImages, downloadStockImage, getSuggestedImageQueries } from '@/lib/stockImages';
 import { generateBlogTopics, generateTopicsFromContent } from '@/lib/blogTopics';
+import { uploadToS3 } from '@/lib/s3';
+import GeneratedAsset, { AssetKind } from '@/models/GeneratedAsset';
 import mongoose from 'mongoose';
 
 const blogSchema = z.object({
@@ -355,18 +357,50 @@ export async function transcribeAndGenerateBlog(
     let finalContent = blogResult.content;
     let images: any[] = [];
 
-    if (processedOptions?.includeImages !== false && blogResult.imagePositions.length > 0) {
+    if (processedOptions?.includeImages === true && blogResult.imagePositions.length > 0) {
       const generatedImages = await generateBlogImages(
         blogResult.imagePositions,
         blogResult.content,
         processedOptions?.tone || 'gentle'
       );
 
-      // Insert images into content
-      finalContent = insertBlogImagesIntoContent(blogResult.content, generatedImages);
+      // Download images from OpenAI and upload to S3
+      const imagesWithS3Urls = await Promise.all(
+        generatedImages.map(async (img) => {
+          try {
+            // Download image from OpenAI URL (which expires after ~2 hours)
+            const imageResponse = await fetch(img.url);
+            if (imageResponse.ok) {
+              const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+              
+              // Generate filename based on blog slug and timestamp
+              const fileName = `blog-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+              
+              // Upload to S3
+              const s3Url = await uploadToS3(imageBuffer, fileName, 'blog-images');
+              
+              console.log(`✅ Downloaded and stored blog image: ${s3Url}`);
+              
+              return {
+                ...img,
+                url: s3Url, // Replace OpenAI URL with S3 URL
+              };
+            } else {
+              console.warn(`⚠️ Failed to download image from ${img.url}, using OpenAI URL`);
+              return img; // Fallback to OpenAI URL
+            }
+          } catch (error) {
+            console.error(`❌ Error downloading/storing blog image:`, error);
+            return img; // Fallback to OpenAI URL if download/storage fails
+          }
+        })
+      );
+
+      // Insert images into content with S3 URLs
+      finalContent = insertBlogImagesIntoContent(blogResult.content, imagesWithS3Urls);
 
       // Transform to blog image format
-      images = generatedImages.map((img) => ({
+      images = imagesWithS3Urls.map((img) => ({
         url: img.url,
         alt: img.alt,
         position: img.position,
@@ -405,8 +439,34 @@ export async function transcribeAndGenerateBlog(
       customContent: processedOptions?.customContent,
     });
 
+    // Step 7: Save images to GeneratedAsset for gallery
+    if (images.length > 0) {
+      await Promise.all(
+        images.map(async (img, index) => {
+          try {
+            await GeneratedAsset.create({
+              blogId: new mongoose.Types.ObjectId(String(blog._id)),
+              kind: AssetKind.IMAGE_FEED,
+              size: '1024x1024',
+              url: img.url,
+              thumbnailUrl: img.url,
+              metadata: {
+                prompt: img.prompt,
+                model: 'dall-e-3',
+                revised_prompt: img.prompt,
+              },
+            });
+          } catch (error) {
+            console.error(`Error saving blog image to GeneratedAsset:`, error);
+            // Don't fail the whole operation if asset saving fails
+          }
+        })
+      );
+    }
+
     revalidatePath('/blogs');
     revalidatePath('/');
+    revalidatePath('/gallery');
 
     return {
       success: true,
@@ -465,22 +525,79 @@ export async function regenerateBlog(
     let finalContent = blogResult.content;
     let images = blog.images || [];
 
-    if (options?.regenerateImages !== false && blogResult.imagePositions.length > 0) {
+    if (options?.regenerateImages === true && blogResult.imagePositions.length > 0) {
       const generatedImages = await generateBlogImages(
         blogResult.imagePositions,
         blogResult.content,
         options?.tone || 'gentle'
       );
 
-      finalContent = insertBlogImagesIntoContent(blogResult.content, generatedImages);
+      // Download images from OpenAI and upload to S3
+      const imagesWithS3Urls = await Promise.all(
+        generatedImages.map(async (img) => {
+          try {
+            // Download image from OpenAI URL (which expires after ~2 hours)
+            const imageResponse = await fetch(img.url);
+            if (imageResponse.ok) {
+              const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+              
+              // Generate filename based on blog slug and timestamp
+              const fileName = `blog-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+              
+              // Upload to S3
+              const s3Url = await uploadToS3(imageBuffer, fileName, 'blog-images');
+              
+              console.log(`✅ Downloaded and stored blog image: ${s3Url}`);
+              
+              return {
+                ...img,
+                url: s3Url, // Replace OpenAI URL with S3 URL
+              };
+            } else {
+              console.warn(`⚠️ Failed to download image from ${img.url}, using OpenAI URL`);
+              return img; // Fallback to OpenAI URL
+            }
+          } catch (error) {
+            console.error(`❌ Error downloading/storing blog image:`, error);
+            return img; // Fallback to OpenAI URL if download/storage fails
+          }
+        })
+      );
 
-      images = generatedImages.map((img) => ({
+      finalContent = insertBlogImagesIntoContent(blogResult.content, imagesWithS3Urls);
+
+      images = imagesWithS3Urls.map((img) => ({
         url: img.url,
         alt: img.alt,
         position: img.position,
         prompt: img.prompt,
         generatedAt: new Date(),
       }));
+
+      // Delete old GeneratedAsset entries for this blog and save new ones
+      await GeneratedAsset.deleteMany({ blogId: new mongoose.Types.ObjectId(id) });
+      
+      // Save new images to GeneratedAsset for gallery
+      await Promise.all(
+        images.map(async (img) => {
+          try {
+            await GeneratedAsset.create({
+              blogId: new mongoose.Types.ObjectId(id),
+              kind: AssetKind.IMAGE_FEED,
+              size: '1024x1024',
+              url: img.url,
+              thumbnailUrl: img.url,
+              metadata: {
+                prompt: img.prompt,
+                model: 'dall-e-3',
+                revised_prompt: img.prompt,
+              },
+            });
+          } catch (error) {
+            console.error(`Error saving blog image to GeneratedAsset:`, error);
+          }
+        })
+      );
     }
 
     // Update blog
@@ -509,6 +626,7 @@ export async function regenerateBlog(
     revalidatePath('/blogs');
     revalidatePath(`/blogs/${id}`);
     revalidatePath('/');
+    revalidatePath('/gallery');
 
     return {
       success: true,
@@ -646,6 +764,143 @@ export async function generateBlogTopicsFromContent(content: string, count: numb
       success: false,
       error: error instanceof Error ? error.message : 'Failed to generate topics',
       topics: [],
+    };
+  }
+}
+
+/**
+ * Generate blog from a topic
+ */
+export async function generateBlogFromTopic(
+  topicTitle: string,
+  topicDescription: string,
+  options?: {
+    keyPoints?: string[];
+    customContent?: string;
+    tone?: 'educational' | 'validating' | 'gentle' | 'hopeful' | 'grounding';
+    includeImages?: boolean;
+  }
+) {
+  try {
+    await connectDB();
+
+    // Generate blog content from topic
+    const blogResult = await generateBlogFromTranscription({
+      topicTitle,
+      topicDescription,
+      topicKeyPoints: options?.keyPoints || [],
+      title: topicTitle,
+      customContent: options?.customContent,
+      tone: options?.tone || 'gentle',
+      includeImages: options?.includeImages !== false,
+    });
+
+    // Generate images if requested
+    let finalContent = blogResult.content;
+    let images: any[] = [];
+
+    if (options?.includeImages === true && blogResult.imagePositions.length > 0) {
+      const generatedImages = await generateBlogImages(
+        blogResult.imagePositions,
+        blogResult.content,
+        options?.tone || 'gentle'
+      );
+
+      // Download images from OpenAI and upload to S3
+      const imagesWithS3Urls = await Promise.all(
+        generatedImages.map(async (img) => {
+          try {
+            const imageResponse = await fetch(img.url);
+            if (imageResponse.ok) {
+              const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+              const fileName = `blog-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+              const s3Url = await uploadToS3(imageBuffer, fileName, 'blog-images');
+              console.log(`✅ Downloaded and stored blog image: ${s3Url}`);
+              return { ...img, url: s3Url };
+            } else {
+              console.warn(`⚠️ Failed to download image from ${img.url}, using OpenAI URL`);
+              return img;
+            }
+          } catch (error) {
+            console.error(`❌ Error downloading/storing blog image:`, error);
+            return img;
+          }
+        })
+      );
+
+      finalContent = insertBlogImagesIntoContent(blogResult.content, imagesWithS3Urls);
+      images = imagesWithS3Urls.map((img) => ({
+        url: img.url,
+        alt: img.alt,
+        position: img.position,
+        prompt: img.prompt,
+        generatedAt: new Date(),
+      }));
+    }
+
+    // Ensure unique slug
+    const uniqueSlug = await ensureUniqueSlug(
+      blogResult.slug,
+      async (s) => {
+        const existing = await Blog.findOne({ slug: s }).lean();
+        return !!existing;
+      }
+    );
+
+    // Create blog post
+    const blog = await Blog.create({
+      title: blogResult.title,
+      slug: uniqueSlug,
+      excerpt: blogResult.excerpt,
+      content: finalContent,
+      summary: blogResult.summary,
+      status: BlogStatus.DRAFT,
+      featuredImage: images.length > 0 ? images[0].url : undefined,
+      images,
+      readingTime: blogResult.readingTime,
+      seoTitle: blogResult.seoTitle,
+      seoDescription: blogResult.seoDescription,
+      tags: blogResult.suggestedTags,
+      customContent: options?.customContent,
+    });
+
+    // Save images to GeneratedAsset for gallery
+    if (images.length > 0) {
+      await Promise.all(
+        images.map(async (img) => {
+          try {
+            await GeneratedAsset.create({
+              blogId: new mongoose.Types.ObjectId(String(blog._id)),
+              kind: AssetKind.IMAGE_FEED,
+              size: '1024x1024',
+              url: img.url,
+              thumbnailUrl: img.url,
+              metadata: {
+                prompt: img.prompt,
+                model: 'dall-e-3',
+                revised_prompt: img.prompt,
+              },
+            });
+          } catch (error) {
+            console.error(`Error saving blog image to GeneratedAsset:`, error);
+          }
+        })
+      );
+    }
+
+    revalidatePath('/blogs');
+    revalidatePath('/');
+    revalidatePath('/gallery');
+
+    return {
+      success: true,
+      blog: await transformBlog(String(blog._id)),
+    };
+  } catch (error) {
+    console.error('Error generating blog from topic:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate blog from topic',
     };
   }
 }

@@ -16,8 +16,11 @@ function getOpenAI(): OpenAI {
 }
 
 export interface BlogGenerationOptions {
-  transcription: string;
+  transcription?: string;
   title?: string;
+  topicTitle?: string;
+  topicDescription?: string;
+  topicKeyPoints?: string[];
   customContent?: string;
   tone?: 'educational' | 'validating' | 'gentle' | 'hopeful' | 'grounding';
   includeImages?: boolean;
@@ -64,6 +67,9 @@ export async function generateBlogFromTranscription(
   const {
     transcription,
     title,
+    topicTitle,
+    topicDescription,
+    topicKeyPoints,
     customContent,
     tone = 'gentle',
     includeImages = true,
@@ -71,18 +77,34 @@ export async function generateBlogFromTranscription(
     summarize = false,
   } = options;
 
-  // Step 1: Summarize if requested
-  let processedTranscription = transcription;
-  if (summarize) {
-    processedTranscription = await summarizeTranscription(transcription, tone);
-  }
-
-  // Step 2: Generate or rephrase content
+  // Step 1: Generate content from topic if provided, otherwise from transcription
   let blogContent: string;
-  if (rephrase) {
-    blogContent = await rephraseContent(processedTranscription, tone, customContent);
+  
+  if (topicTitle && topicDescription) {
+    // Generate blog from topic
+    blogContent = await generateBlogFromTopic({
+      title: topicTitle,
+      description: topicDescription,
+      keyPoints: topicKeyPoints || [],
+      tone,
+      customContent,
+    });
+  } else if (transcription) {
+    // Generate from transcription (existing flow)
+    // Step 1: Summarize if requested
+    let processedTranscription = transcription;
+    if (summarize) {
+      processedTranscription = await summarizeTranscription(transcription, tone);
+    }
+
+    // Step 2: Generate or rephrase content
+    if (rephrase) {
+      blogContent = await rephraseContent(processedTranscription, tone, customContent);
+    } else {
+      blogContent = await convertTranscriptionToBlog(processedTranscription, tone, customContent);
+    }
   } else {
-    blogContent = await convertTranscriptionToBlog(processedTranscription, tone, customContent);
+    throw new Error('Either transcription or topic information must be provided');
   }
 
   // Step 3: Generate title if not provided
@@ -178,15 +200,15 @@ async function rephraseContent(
     messages: [
       {
         role: 'system',
-        content: `You are a compassionate content creator specializing in CPTSD awareness and healing. Your tone is ${tone} and supportive. Rephrase the content to make it more engaging, clear, and accessible while maintaining all key information.`,
+        content: `You are a compassionate content creator specializing in CPTSD awareness and healing. Your tone is ${tone} and supportive. Rephrase the content to make it more engaging, clear, and accessible while maintaining all key information. Make sure to use the FULL content - do not summarize or truncate it.`,
       },
       {
         role: 'user',
-        content: `Rephrase the following content into a well-structured blog post. Make it engaging, clear, and accessible for people dealing with CPTSD:\n\n${contentToRephrase}`,
+        content: `Rephrase the following content into a well-structured blog post. Make it engaging, clear, and accessible for people dealing with CPTSD. IMPORTANT: Use the ENTIRE content - do not summarize or leave out information:\n\n${contentToRephrase}`,
       },
     ],
     temperature: 0.7,
-    max_tokens: 4000,
+    // Remove max_tokens limit to allow full content generation
   });
 
   return response.choices[0]?.message?.content || contentToRephrase;
@@ -209,18 +231,71 @@ async function convertTranscriptionToBlog(
     messages: [
       {
         role: 'system',
-        content: `You are a compassionate content creator specializing in CPTSD awareness and healing. Your tone is ${tone} and supportive. Convert the transcription into a well-structured, engaging blog post with proper headings, paragraphs, and formatting. Use markdown format.`,
+        content: `You are a compassionate content creator specializing in CPTSD awareness and healing. Your tone is ${tone} and supportive. Convert the transcription into a well-structured, engaging blog post with proper headings, paragraphs, and formatting. Use markdown format. Make sure to use the FULL transcription content - do not summarize or truncate it.`,
       },
       {
         role: 'user',
-        content: `Convert the following YouTube video transcription into a well-structured blog post. Use markdown formatting with headings, paragraphs, and lists where appropriate. Make it engaging and accessible for people dealing with CPTSD:\n\n${baseContent}`,
+        content: `Convert the following YouTube video transcription into a well-structured blog post. Use markdown formatting with headings, paragraphs, and lists where appropriate. Make it engaging and accessible for people dealing with CPTSD. IMPORTANT: Use the ENTIRE transcription - do not summarize or leave out content:\n\n${baseContent}`,
       },
     ],
     temperature: 0.7,
-    max_tokens: 4000,
+    // Remove max_tokens limit to allow full content generation
   });
 
   return response.choices[0]?.message?.content || baseContent;
+}
+
+/**
+ * Generate blog content from a topic
+ */
+async function generateBlogFromTopic(options: {
+  title: string;
+  description: string;
+  keyPoints: string[];
+  tone: string;
+  customContent?: string;
+}): Promise<string> {
+  const { title, description, keyPoints, tone, customContent } = options;
+  
+  const keyPointsText = keyPoints.length > 0
+    ? `\n\nKey points to cover:\n${keyPoints.map((point, idx) => `${idx + 1}. ${point}`).join('\n')}`
+    : '';
+  
+  const customContentText = customContent
+    ? `\n\nAdditional content to incorporate:\n${customContent}`
+    : '';
+
+  const response = await getOpenAI().chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content: `You are a compassionate content creator specializing in CPTSD awareness and healing. Your tone is ${tone} and supportive. Create a well-structured, engaging blog post with proper headings, paragraphs, and formatting. Use markdown format. Make the content comprehensive, informative, and accessible for people dealing with CPTSD.`,
+      },
+      {
+        role: 'user',
+        content: `Create a comprehensive blog post with the following details:
+
+Title: ${title}
+Description: ${description}${keyPointsText}${customContentText}
+
+Write a full, detailed blog post that:
+- Is well-structured with clear headings and subheadings
+- Uses markdown formatting
+- Covers all the key points mentioned
+- Is compassionate, validating, and educational
+- Is appropriate for people dealing with CPTSD
+- Is at least 1000 words long
+- Includes practical advice and actionable insights
+
+Make it engaging and accessible.`,
+      },
+    ],
+    temperature: 0.7,
+    // Remove max_tokens limit to allow full content generation
+  });
+
+  return response.choices[0]?.message?.content || '';
 }
 
 /**
@@ -304,18 +379,18 @@ async function identifyImagePositions(
     messages: [
       {
         role: 'system',
-        content: `You are a content creator specializing in CPTSD awareness. Identify 3-5 strategic positions in blog content where images would enhance understanding and engagement. Consider: section breaks, key concepts, emotional moments, and visual metaphors.`,
+        content: `You are a content creator specializing in CPTSD awareness. Identify ONE strategic position in blog content where an image would enhance understanding and engagement. Consider: section breaks, key concepts, emotional moments, and visual metaphors.`,
       },
       {
         role: 'user',
-        content: `Analyze this blog content and identify positions where images would be appropriate. For each position, provide:
-1. The character index (position in the content string)
+        content: `Analyze this blog content and identify ONE position where an image would be most appropriate. Provide:
+1. The character index (position in the content string) - choose a position around the middle or first third of the content
 2. A detailed description for image generation (CPTSD-aware, gentle, non-triggering)
 3. Alt text for accessibility
 
 Content:\n\n${content}
 
-Respond in JSON format:
+Respond in JSON format with exactly ONE image:
 {
   "images": [
     {
@@ -328,13 +403,15 @@ Respond in JSON format:
       },
     ],
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 1000,
     response_format: { type: 'json_object' },
   });
 
   try {
     const result = JSON.parse(response.choices[0]?.message?.content || '{}');
-    return result.images || [];
+    const images = result.images || [];
+    // Limit to only 1 image
+    return images.slice(0, 1);
   } catch (error) {
     console.error('Error parsing image positions:', error);
     return [];

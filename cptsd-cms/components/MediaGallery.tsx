@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { deleteAsset } from '@/app/actions/assets';
 import { deleteStandaloneGeneration } from '@/app/actions/standalone';
+import { uploadGalleryImage } from '@/app/actions/uploads';
 import ImageModal from './ImageModal';
 
 type Asset = {
   id: string;
   _id: string;
   postId: string;
+  blogId?: string;
   kind: 'IMAGE_FEED' | 'IMAGE_STORY' | 'VIDEO_REEL_DRAFT' | 'IMAGE_CAROUSEL_SLIDE';
   size: string;
   url: string;
@@ -33,7 +35,14 @@ type Asset = {
     postType: string;
     status: string;
   } | null;
-  source?: 'post' | 'standalone';
+  blog?: {
+    id: string;
+    _id: string;
+    title: string;
+    slug: string;
+    status: string;
+  } | null;
+  source?: 'post' | 'blog' | 'standalone';
   standaloneGeneration?: {
     id: string;
     prompt: string;
@@ -69,6 +78,9 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
   const [filterPostId, setFilterPostId] = useState(searchParams.get('postId') || '');
   const [filterKind, setFilterKind] = useState(searchParams.get('kind') || '');
+  const [uploading, setUploading] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDeleteAsset = async (assetId: string, asset: Asset) => {
     if (!confirm('Are you sure you want to delete this asset?')) {
@@ -120,6 +132,70 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
     router.refresh();
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const result = await uploadGalleryImage(formData);
+
+      if (result.success && result.url) {
+        // Add the new asset to the list
+        const newAsset: Asset = {
+          id: result.assetId || Date.now().toString(),
+          _id: result.assetId || Date.now().toString(),
+          postId: '',
+          kind: 'IMAGE_FEED',
+          size: '1080x1080',
+          url: result.url,
+          thumbnailUrl: result.url,
+          slideNumber: null,
+          metadata: {
+            prompt: 'Manually uploaded image',
+            model: 'manual-upload',
+          },
+          post: null,
+          blog: null,
+          source: 'post', // Will be treated as standalone
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        setAssets((prev) => [newAsset, ...prev]);
+        setSuccess('Image uploaded successfully!');
+        router.refresh();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(result.error || 'Failed to upload image');
+      }
+    } catch (err) {
+      setError('An error occurred while uploading the image');
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const copyImageUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (err) {
+      setError('Failed to copy URL to clipboard');
+    }
+  };
+
   const getKindLabel = (kind: string, slideNumber?: number | null) => {
     switch (kind) {
       case 'IMAGE_FEED':
@@ -162,6 +238,31 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
       )}
 
       <div className="space-y-6">
+        {/* Upload Section */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Upload Images</h2>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {uploading ? 'Uploading...' : 'Upload Image'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </div>
+          <p className="text-sm text-gray-600">
+            Upload images to the gallery. Images will be saved to S3 and available for use in your content.
+          </p>
+        </div>
+
         {/* Filters */}
         <div className="card">
           <h2 className="text-lg font-semibold mb-4">Filters</h2>
@@ -283,6 +384,11 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
                     >
                       {getKindLabel(asset.kind, asset.slideNumber)}
                     </span>
+                    {asset.source === 'blog' && (
+                      <span className="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">
+                        Blog
+                      </span>
+                    )}
                     {asset.source === 'standalone' && (
                       <span className="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">
                         Standalone
@@ -302,7 +408,12 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-500 truncate">{asset.size}</p>
-                      {asset.post && (
+                      {asset.source === 'blog' && asset.blog && (
+                        <p className="text-xs text-gray-400 truncate mt-1">
+                          Blog: {asset.blog.title?.substring(0, 30) || asset.blog.id}
+                        </p>
+                      )}
+                      {asset.source === 'post' && asset.post && (
                         <p className="text-xs text-gray-400 truncate mt-1">
                           Post: {asset.post.rawIdea?.substring(0, 30) || asset.post.id}
                         </p>
@@ -319,7 +430,7 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
                         e.stopPropagation();
                         handleDeleteAsset(asset.id, asset);
                       }}
-                      className="text-red-600 hover:text-red-800 text-sm ml-2"
+                      className="text-red-600 hover:text-red-800 text-sm"
                       title="Delete asset"
                       disabled={isPending}
                     >
@@ -329,6 +440,16 @@ export default function MediaGallery({ assets: initialAssets, posts }: MediaGall
 
                   {/* Actions */}
                   <div className="flex space-x-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyImageUrl(asset.url);
+                      }}
+                      className="flex-1 text-center px-2 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
+                    >
+                      {copiedUrl === asset.url ? 'Copied!' : 'Copy URL'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setSelectedImage({ url: asset.url, alt: `${asset.kind} - ${asset.size}` })}
