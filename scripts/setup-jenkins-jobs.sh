@@ -152,6 +152,7 @@ create_job() {
   <triggers>
     <com.cloudbees.jenkins.GitHubPushTrigger plugin="github">
       <spec></spec>
+      <githubHooks>true</githubHooks>
     </com.cloudbees.jenkins.GitHubPushTrigger>
   </triggers>
   <disabled>false</disabled>
