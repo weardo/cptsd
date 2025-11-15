@@ -174,9 +174,9 @@ EOF
         if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
             HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
                 -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-                -H "$CRUMB_FIELD: $CRUMB_VALUE" \
+                --header "$CRUMB_FIELD: $CRUMB_VALUE" \
                 --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
-                -H "Content-Type: text/xml" \
+                --header "Content-Type: text/xml" \
                 "$JENKINS_URL/job/$JOB_NAME/config.xml")
         else
             HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
@@ -188,11 +188,12 @@ EOF
     else
         # Create new job
         if [ -n "$CRUMB_FIELD" ] && [ -n "$CRUMB_VALUE" ]; then
+            # Use --header instead of -H to ensure proper formatting
             HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
                 -X POST -u "$JENKINS_USER:$JENKINS_PASSWORD" \
-                -H "$CRUMB_FIELD: $CRUMB_VALUE" \
+                --header "$CRUMB_FIELD: $CRUMB_VALUE" \
                 --data-binary @/tmp/jenkins-job-${JOB_NAME}.xml \
-                -H "Content-Type: text/xml" \
+                --header "Content-Type: text/xml" \
                 "$JENKINS_URL/createItem?name=$JOB_NAME")
         else
             HTTP_CODE=$(curl -s -k -w "%{http_code}" -o /tmp/jenkins-response-${JOB_NAME}.txt \
