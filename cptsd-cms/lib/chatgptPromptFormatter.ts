@@ -169,6 +169,46 @@ export function formatChatGPTPrompt(post: PostData): string {
   prompt += `- High quality, professional appearance\n\n`;
   
   prompt += `Ready to begin? **First, complete the bird analysis (Step 1) - analyze EACH bird separately - and wait for my confirmation before generating any images.**\n`;
+
+  // Include strict corrections and rules provided by the user to enforce consistency
+  prompt += `\n---\n\n`;
+  prompt += `## Full List of Corrections & Rules (Apply Rigorously)\n\n`;
+  prompt += `### A. Bird Appearance Rules\n\n`;
+  prompt += `1. Use the exact Astra and Begee designs from the detailed initial analysis.\n`;
+  prompt += `2. No mixing features between Astra and Begee birds.\n`;
+  prompt += `3. Birds must have only eyes + beak —\n`;
+  prompt += `   - NO mouths\n`;
+  prompt += `   - NO eyebrows\n`;
+  prompt += `6. Follow the Finch-style flat vector look exactly (colors, shapes, clothes, wings, hats, accessories).\n\n`;
+  prompt += `### B. Speech Bubble & Text Rules\n\n`;
+  prompt += `7. Speech bubble must point to the correct character (Astra or Begee depending on who is speaking).\n`;
+  prompt += `8. Speech bubble shape, color, text size, and layout must be consistent across all slides.\n`;
+  prompt += `9. Include all text from the script for that slide —\n`;
+  prompt += `   - No missing words\n`;
+  prompt += `   - No cropping\n`;
+  prompt += `   - No rewriting unless requested\n`;
+  prompt += `10. Additional text under the bubble must also be included in full.\n`;
+  prompt += `11. Text color must be consistent across all slides (dark brown).\n`;
+  prompt += `12. Text must never touch borders — consistent padding.\n\n`;
+  prompt += `### C. Bird Positioning Rules\n\n`;
+  prompt += `15. Both Astra and Betee must always be included unless a slide specifically requires otherwise.\n\n`;
+  prompt += `### D. Background & Style Rules\n\n`;
+  prompt += `16. Background must be calm, soft, and minimal — beige, soft green, muted tones.\n`;
+  prompt += `17. No loud colors or visually chaotic elements unless contextually needed.\n`;
+  prompt += `18. Maintain the same tone across slides for consistency.\n`;
+  prompt += `19. 1080 × 1080 resolution strictly for every slide.\n\n`;
+  prompt += `### E. Composition Rules\n\n`;
+  prompt += `20. Text spacing consistent across slides.\n`;
+  prompt += `21. Birds must be drawn accurately and consistently with their original details (headphones, clothing, wings, hats, etc.).\n`;
+  prompt += `22. Rangoli in Slide 6 must be big, with Begee drawing it.\n`;
+  prompt += `23. Ensure visual balance: no overcrowding, no text cutoffs.\n\n`;
+  prompt += `### F. Quality & Accuracy Rules\n\n`;
+  prompt += `24. No factual errors in script text.\n`;
+  prompt += `25. CPTSD, not PTSD.\n`;
+  prompt += `26. Bubble must not cover birds awkwardly.\n`;
+  prompt += `27. Maintain accessibility: readable font size, clear bubble shape.\n\n`;
+  prompt += `28. The bird mascot should be recognizable and match the Finch app style, but it's perfectly fine for the bird to appear small in the image if that creates better composition and proportion. The bird does NOT need to span the image or be the dominant element - prioritize overall image quality and visual balance.\n\n`;
+  prompt += `29. Make the birds alive and animated. Expressions should follow the script. Don't make the birds look like they are thinking. Make them look like they are having a conversation with each other and should be looking at each other. Face expressions should be consistent with the script.\n`;
   
   return prompt;
 }
