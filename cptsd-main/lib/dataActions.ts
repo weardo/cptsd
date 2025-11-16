@@ -1,7 +1,5 @@
 import connectDB from './mongodb';
-import { Article, ArticleStatus as BlogStatus } from '@cptsd/db';
-import Story, { StoryStatus } from '@cptsd/db/models/Story';
-import Resource, { ResourceType } from '@cptsd/db/models/Resource';
+import { Article, ArticleStatus as BlogStatus, Story, StoryStatus, Resource, ResourceType } from '@cptsd/db';
 import mongoose from 'mongoose';
 
 // Blog/Article helpers

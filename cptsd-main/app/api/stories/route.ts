@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import Story, { StoryStatus } from '@cptsd/db/models/Story';
+import { Story, StoryStatus } from '@cptsd/db';
 import mongoose from 'mongoose';
 
 // Simple rate limiting - store in memory (in production, use Redis or similar)
