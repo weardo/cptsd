@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { generateContentForPost } from '@/lib/openai-direct';
 import mongoose from 'mongoose';
+import { uploadToS3 } from '@/lib/s3';
 
 const postSchema = z.object({
   topicId: z.string().min(1, 'Topic ID is required'), // MongoDB ObjectId as string
@@ -96,6 +97,28 @@ export async function createPost(formData: FormData) {
 export async function updatePost(id: string, formData: FormData) {
   try {
     await connectDB();
+    
+    // If a file was sent directly in the server action request, process it and
+    // convert to a finchScreenshotUrl before handling text fields.
+    // This allows drag/drop or browser auto field names like "1_files".
+    for (const [, value] of formData.entries()) {
+      if (value instanceof File) {
+        // Basic validation (accept common image types up to ~20MB)
+        const maxSize = 20 * 1024 * 1024;
+        if (value.size > maxSize) {
+          return { success: false, error: 'Image exceeds 20MB limit' };
+        }
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowed.includes(value.type)) {
+          return { success: false, error: 'Only JPEG/PNG/GIF/WEBP images are allowed' };
+        }
+        const buffer = Buffer.from(await value.arrayBuffer());
+        const url = await uploadToS3(buffer, value.name, 'finch-screenshots');
+        // Normalize into expected URL field so the rest of the flow is consistent
+        formData.set('finchScreenshotUrl', url);
+        break; // Only process the first file
+      }
+    }
     
     const script = formData.get('script') as string | null;
     const caption = formData.get('caption') as string | null;
