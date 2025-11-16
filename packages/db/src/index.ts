@@ -8,8 +8,10 @@ export { default as connectDB } from './mongodb';
 export { default as Article, ArticleStatus, ArticleCategory } from './models/Article';
 export type { IArticle, IArticleImage } from './models/Article';
 
-export { default as Resource, ResourceType, ResourceCategory } from './models/Resource';
+export { default as Resource } from './models/Resource';
 export type { IResource } from './models/Resource';
+// Export types separately to avoid pulling in Mongoose in client components
+export { ResourceType, ResourceCategory } from './types/Resource';
 
 export { default as FeaturedContent } from './models/FeaturedContent';
 export type { IFeaturedContent } from './models/FeaturedContent';
