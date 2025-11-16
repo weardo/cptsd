@@ -16,6 +16,7 @@ const MAX_PETS = 8;
 const INTERACTION_THRESHOLD = 3; // Interactions needed to add a pet
 const FOCUS_TIMEOUT = 30000; // 30 seconds of no interaction = focused reading
 const INTERACTION_COOLDOWN = 2000; // 2 seconds between interaction tracking
+const MOBILE_BREAKPOINT = 768; // Screens smaller than 768px are considered mobile
 
 export default function FloatingPetsContainer({
   initialCount = 3,
@@ -25,6 +26,8 @@ export default function FloatingPetsContainer({
   const [pets, setPets] = useState<Array<{ type: PetType; id: number; entering: boolean; exiting?: boolean }>>([]);
   const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileEnabled, setMobileEnabled] = useState(false);
   const [interactionCount, setInteractionCount] = useState(0);
   const [isCleared, setIsCleared] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -34,7 +37,7 @@ export default function FloatingPetsContainer({
   const nextPetId = useRef(0);
   const initializedRef = useRef(false);
 
-  // Load interaction count from localStorage
+  // Load interaction count and mobile enabled state from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -42,23 +45,24 @@ export default function FloatingPetsContainer({
         const data = JSON.parse(stored);
         setInteractionCount(data.count || 0);
         setIsCleared(data.cleared || false);
+        setMobileEnabled(data.mobileEnabled || false);
       }
     } catch (e) {
       // Ignore errors
     }
   }, []);
 
-  // Save interaction count to localStorage
+  // Save interaction count and mobile enabled state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ count: interactionCount, cleared: isCleared })
+        JSON.stringify({ count: interactionCount, cleared: isCleared, mobileEnabled })
       );
     } catch (e) {
       // Ignore errors
     }
-  }, [interactionCount, isCleared]);
+  }, [interactionCount, isCleared, mobileEnabled]);
 
   // Track user interactions (scroll, mouse move, click, keypress)
   useEffect(() => {
@@ -124,6 +128,9 @@ export default function FloatingPetsContainer({
   const calculatePetCount = useCallback(() => {
     if (isCleared) return 0;
     
+    // On mobile, disable pets by default unless explicitly enabled
+    if (isMobile && !mobileEnabled) return 0;
+    
     // When focused, reduce pets significantly
     if (isFocused) {
       return Math.max(MIN_PETS, Math.floor(initialCount / 2));
@@ -135,7 +142,7 @@ export default function FloatingPetsContainer({
     const totalCount = Math.min(initialCount + bonusPets, maxCount);
     
     return prefersReducedMotion ? Math.min(totalCount, 2) : totalCount;
-  }, [initialCount, interactionCount, maxCount, prefersReducedMotion, isCleared, isFocused]);
+  }, [initialCount, interactionCount, maxCount, prefersReducedMotion, isCleared, isFocused, isMobile, mobileEnabled]);
 
   // Handle pet interaction (click on pet)
   const handlePetInteraction = useCallback(() => {
@@ -154,10 +161,16 @@ export default function FloatingPetsContainer({
   // Restore pets
   const handleRestorePets = useCallback(() => {
     setIsCleared(false);
+    // On mobile, also enable pets when restoring
+    if (isMobile) {
+      setMobileEnabled(true);
+      // Reset initialization flag so pets can be initialized
+      initializedRef.current = false;
+    }
     setInteractionCount(0);
     setUserActivity(0);
     lastInteractionTime.current = Date.now();
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     setMounted(true);
@@ -167,14 +180,23 @@ export default function FloatingPetsContainer({
     const reducedMotion = mediaQuery.matches;
     setPrefersReducedMotion(reducedMotion);
     
-    const handleChange = (e: MediaQueryListEvent) => {
+    const handleMotionChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
     };
     
-    mediaQuery.addEventListener('change', handleChange);
+    mediaQuery.addEventListener('change', handleMotionChange);
+    
+    // Check for mobile screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
     
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
+      mediaQuery.removeEventListener('change', handleMotionChange);
+      window.removeEventListener('resize', checkMobile);
     };
   }, []);
 
@@ -267,6 +289,8 @@ export default function FloatingPetsContainer({
   // Initialize pets on mount - only run once
   useEffect(() => {
     if (!mounted || isCleared || initializedRef.current) return;
+    // Don't initialize if on mobile and not enabled
+    if (isMobile && !mobileEnabled) return;
     
     const initialCount = calculatePetCount();
     const petList: Array<{ type: PetType; id: number; entering: boolean; exiting?: boolean }> = [];
@@ -294,11 +318,12 @@ export default function FloatingPetsContainer({
     }, 1000);
     
     return () => clearTimeout(initTimeout);
-  }, [mounted, isCleared]);
+  }, [mounted, isCleared, isMobile, mobileEnabled, calculatePetCount, petTypes]);
 
   if (!mounted) return null;
 
-  if (isCleared) {
+  // Show restore button if cleared or if on mobile and not enabled
+  if (isCleared || (isMobile && !mobileEnabled)) {
     return (
       <div 
         className="pet-control-container fixed bottom-4 right-4 z-[100] pointer-events-auto"

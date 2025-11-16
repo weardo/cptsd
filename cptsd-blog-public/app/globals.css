@@ -380,6 +380,10 @@ a {
   position: absolute !important;
   /* Ensure bubble appears below pet (when position="bottom") */
   pointer-events: none;
+  /* Constrain bubble within viewport */
+  max-width: min(200px, calc(100vw - 20px));
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .speech-bubble > div {
