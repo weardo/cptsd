@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { trackStorySubmit, trackFormSubmit } from '@/lib/analytics';
 
 export default function SubmitStoryPage() {
   const router = useRouter();
@@ -58,11 +59,14 @@ export default function SubmitStoryPage() {
       }
 
       setSuccess(true);
+      trackStorySubmit();
+      trackFormSubmit('story_submission', true);
       setTimeout(() => {
         router.push('/stories');
       }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+      trackFormSubmit('story_submission', false);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getPublishedBlogs, getApprovedStories } from '@/lib/dataActions';
+import { getFeaturedContent } from '@/lib/getFeaturedContent';
+import FeaturedCard from './featured/featured-card';
 
 const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
 
@@ -7,9 +9,10 @@ const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.i
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [latestBlogs, stories] = await Promise.all([
+  const [latestBlogs, stories, featuredItems] = await Promise.all([
     getPublishedBlogs({ limit: 5 }),
     getApprovedStories(3),
+    getFeaturedContent(6),
   ]);
 
   return (
@@ -45,6 +48,25 @@ export default async function HomePage() {
             className="btn btn-accent text-center"
           >
             Get support
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured & highlights from the community & beyond */}
+      <section className="mb-16">
+        <h2 className="text-3xl font-bold text-gray-900 mb-6">Featured & highlights from the community & beyond</h2>
+        {featuredItems.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredItems.map((item) => (
+              <FeaturedCard key={item._id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600">Curated highlights will appear here.</p>
+        )}
+        <div className="mt-6 text-center">
+          <Link href="/featured" className="text-blue-600 hover:text-blue-700 font-medium">
+            Browse all highlights →
           </Link>
         </div>
       </section>

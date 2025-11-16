@@ -11,6 +11,7 @@ import { Metadata } from 'next';
 import React from 'react';
 import BlogSidebar from '@/components/BlogSidebar';
 import RelatedPostsSidebar from '@/components/RelatedPostsSidebar';
+import ArticleViewTracker from './article-view-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
@@ -116,6 +117,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <>
+      <ArticleViewTracker slug={slug} title={blog.title} topic={blog.topic?.name} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

@@ -11,6 +11,10 @@ export type { IArticle, IArticleImage } from './models/Article';
 export { default as Resource, ResourceType, ResourceCategory } from './models/Resource';
 export type { IResource } from './models/Resource';
 
+export { default as FeaturedContent } from './models/FeaturedContent';
+export type { IFeaturedContent } from './models/FeaturedContent';
+export { fetchPublishedFeaturedContent, incrementFeaturedContentClick } from './featuredContent';
+
 export { default as Story, StoryStatus } from './models/Story';
 export type { IStory } from './models/Story';
 

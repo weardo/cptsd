@@ -5,6 +5,7 @@ import { FloatingPetsContainer } from '@cptsd/pets';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CrisisBanner from '@/components/CrisisBanner';
+import { Analytics } from '@/components/Analytics';
 
 const merriweather = Merriweather({
   weight: ['300', '400', '700'],
@@ -107,6 +108,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Analytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID_BLOG} />
       </body>
     </html>
   );

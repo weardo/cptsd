@@ -93,6 +93,13 @@ export default function Navbar() {
                         Resources
                       </Link>
                       <Link
+                        href="/studio/featured"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        onClick={() => setContentMenuOpen(false)}
+                      >
+                        Featured
+                      </Link>
+                      <Link
                         href="/supportive-messages"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                         onClick={() => setContentMenuOpen(false)}
@@ -239,6 +246,13 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Resources
+              </Link>
+              <Link
+                href="/studio/featured"
+                className="block px-6 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Featured
               </Link>
               <Link
                 href="/supportive-messages"

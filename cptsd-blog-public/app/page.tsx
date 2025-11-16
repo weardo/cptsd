@@ -1,6 +1,9 @@
 import { getPublishedBlogs, getAllTopics } from '@/lib/blogActions';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { Suspense } from 'react';
+import BlogCard from '@/components/BlogCard';
+import BlogSearchTracker from './blog-search-tracker';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
@@ -70,6 +73,9 @@ export default async function HomePage({
 
   return (
     <>
+      <Suspense fallback={null}>
+        <BlogSearchTracker />
+      </Suspense>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -192,87 +198,18 @@ export default async function HomePage({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
                 {blogs.map((blog) => (
-                  <article
+                  <BlogCard
                     key={blog.id}
-                    className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 group"
-                  >
-                    {blog.featuredImage && (
-                      <Link href={`/blog/${blog.slug}`} className="block">
-                        <div className="aspect-video overflow-hidden bg-gradient-to-br from-[#9fb3a7]/20 to-[#c9a788]/20">
-                          <img
-                            src={blog.featuredImage}
-                            alt={blog.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                        </div>
-                      </Link>
-                    )}
-                    <div className="p-6">
-                      <div className="flex items-center gap-3 text-sm text-gray-600 mb-4 flex-wrap">
-                        {blog.topic && (
-                          <Link
-                            href={`/?topic=${blog.topic.id}`}
-                            className="px-3 py-1 bg-[var(--sage-green)]/20 text-[#5b8a9f] rounded-full font-medium hover:bg-[var(--sage-green)]/30 transition-colors text-xs"
-                          >
-                            {blog.topic.name}
-                          </Link>
-                        )}
-                        {blog.publishedAt && (
-                          <time
-                            dateTime={blog.publishedAt.toString()}
-                            className="text-xs"
-                          >
-                            {new Date(blog.publishedAt).toLocaleDateString(
-                              'en-US',
-                              {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              }
-                            )}
-                          </time>
-                        )}
-                        {blog.readingTime && (
-                          <span className="text-xs">
-                            • {blog.readingTime} min read
-                          </span>
-                        )}
-                      </div>
-                      <Link
-                        href={`/blog/${blog.slug}`}
-                        className="block group/link"
-                      >
-                        <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover/link:text-[#5b8a9f] transition-colors leading-tight line-clamp-2">
-                          {blog.title}
-                        </h2>
-                        {blog.excerpt && (
-                          <p className="text-gray-600 mb-4 leading-relaxed line-clamp-3 text-sm">
-                            {blog.excerpt}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                          <span className="text-[#5b8a9f] font-semibold text-sm group-hover/link:underline">
-                            Read more →
-                          </span>
-                          {blog.tags && blog.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {blog.tags
-                                .slice(0, 2)
-                                .map((tag: string, idx: number) => (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded border border-gray-200"
-                                  >
-                                    #{tag}
-                                  </span>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    </div>
-                  </article>
+                    slug={blog.slug}
+                    title={blog.title}
+                    excerpt={blog.excerpt}
+                    featuredImage={blog.featuredImage}
+                    topic={blog.topic || undefined}
+                    publishedAt={blog.publishedAt}
+                    readingTime={blog.readingTime}
+                    tags={blog.tags}
+                    source="homepage"
+                  />
                 ))}
               </div>
 

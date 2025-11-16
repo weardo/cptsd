@@ -1,6 +1,7 @@
 import { getStoryById } from '@/lib/dataActions';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import StoryViewTracker from './story-view-tracker';
 
 // Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export default async function StoryDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <StoryViewTracker storyId={id} title={story.title || 'Untitled Story'} />
       <Link
         href="/stories"
         className="text-blue-600 hover:text-blue-700 mb-6 inline-block"

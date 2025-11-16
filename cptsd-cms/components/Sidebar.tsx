@@ -39,6 +39,7 @@ export default function Sidebar() {
         { href: '/ideas', label: 'Ideas', icon: '💡' },
         { href: '/templates', label: 'Templates', icon: '📋' },
         { href: '/resources', label: 'Resources', icon: '📚' },
+        { href: '/studio/featured', label: 'Featured', icon: '🌟' },
         { href: '/supportive-messages', label: 'Supportive Messages', icon: '💬' },
       ],
     },

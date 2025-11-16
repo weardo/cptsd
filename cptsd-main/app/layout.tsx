@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CrisisBanner from '@/components/CrisisBanner';
 import { FloatingPetsContainer } from '@cptsd/pets';
+import { Analytics } from '@/components/Analytics';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cptsd.in'),
@@ -67,6 +68,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Analytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID_MAIN} />
       </body>
     </html>
   );

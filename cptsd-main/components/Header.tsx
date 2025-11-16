@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { trackNavigation, trackExternalLink } from '@/lib/analytics';
 
 export default function Header() {
   const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL || 'https://blog.cptsd.in';
@@ -15,29 +16,36 @@ export default function Header() {
             CPTSD.in
           </Link>
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-gray-700 hover:text-gray-900">
+            <Link href="/" onClick={() => trackNavigation('/', 'Home')} className="text-gray-700 hover:text-gray-900">
               Home
             </Link>
-            <Link href="/start-here" className="text-gray-700 hover:text-gray-900">
+            <Link href="/start-here" onClick={() => trackNavigation('/start-here', 'Start Here')} className="text-gray-700 hover:text-gray-900">
               Start Here
             </Link>
-            <Link href="/learn" className="text-gray-700 hover:text-gray-900">
+            <Link href="/learn" onClick={() => trackNavigation('/learn', 'Learn')} className="text-gray-700 hover:text-gray-900">
               Learn
             </Link>
-            <Link href="/live" className="text-gray-700 hover:text-gray-900">
+            <Link href="/live" onClick={() => trackNavigation('/live', 'Live')} className="text-gray-700 hover:text-gray-900">
               Live
             </Link>
-            <Link href="/support" className="text-gray-700 hover:text-gray-900">
+            <Link href="/resources" onClick={() => trackNavigation('/resources', 'Resources')} className="text-gray-700 hover:text-gray-900">
+              Resources
+            </Link>
+            <Link href="/support" onClick={() => trackNavigation('/support', 'Support')} className="text-gray-700 hover:text-gray-900">
               Support
             </Link>
-            <Link href="/community" className="text-gray-700 hover:text-gray-900">
+            <Link href="/community" onClick={() => trackNavigation('/community', 'Community')} className="text-gray-700 hover:text-gray-900">
               Community
             </Link>
-            <Link href="/about" className="text-gray-700 hover:text-gray-900">
+            <Link href="/featured" onClick={() => trackNavigation('/featured', 'Featured')} className="text-gray-700 hover:text-gray-900">
+              Featured
+            </Link>
+            <Link href="/about" onClick={() => trackNavigation('/about', 'About')} className="text-gray-700 hover:text-gray-900">
               About
             </Link>
             <a 
               href={blogUrl} 
+              onClick={() => trackExternalLink(blogUrl, 'Blog')}
               className="text-gray-700 hover:text-gray-900 font-medium"
             >
               Blog
@@ -95,6 +103,13 @@ export default function Header() {
                 Live
               </Link>
               <Link
+                href="/resources"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Resources
+              </Link>
+              <Link
                 href="/support"
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                 onClick={() => setMobileMenuOpen(false)}
@@ -107,6 +122,13 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Community
+              </Link>
+              <Link
+                href="/featured"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Featured
               </Link>
               <Link
                 href="/about"
