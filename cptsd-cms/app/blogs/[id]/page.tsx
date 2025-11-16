@@ -1,4 +1,5 @@
 import { getBlog, getTopics } from '@/app/actions';
+import { getBlogs } from '@/app/actions/blogs';
 
 import BlogDetail from '@/components/BlogDetail';
 
@@ -11,9 +12,10 @@ export default async function BlogDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [blogResult, topicsResult] = await Promise.all([
+  const [blogResult, topicsResult, blogsResult] = await Promise.all([
     getBlog(id),
     getTopics(),
+    getBlogs({ published: false }), // Get all blogs for related articles selection
   ]);
 
   if (!blogResult.success || !blogResult.blog) {
@@ -31,11 +33,16 @@ export default async function BlogDetailPage({
   }
 
   const topics = topicsResult.topics || [];
+  const blogs = (blogsResult.blogs || []).map(blog => ({
+    id: blog.id,
+    title: blog.title,
+    slug: blog.slug,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <BlogDetail blog={blogResult.blog} topics={topics} />
+        <BlogDetail blog={blogResult.blog} topics={topics} blogs={blogs} />
       </div>
     </div>
   );

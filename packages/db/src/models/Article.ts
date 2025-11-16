@@ -15,6 +15,11 @@ export enum ArticleCategory {
   RELATIONSHIPS = 'RELATIONSHIPS',
 }
 
+// Helper function to check if a category exists
+export function isValidCategory(category: string): category is ArticleCategory {
+  return Object.values(ArticleCategory).includes(category as ArticleCategory);
+}
+
 export interface IArticleImage {
   url: string;
   alt: string;
@@ -41,8 +46,13 @@ export interface IArticle extends Document {
   authorId?: mongoose.Types.ObjectId;
   publishedAt?: Date;
   readingTime?: number;
+  estimatedReadTime?: number; // Alias for readingTime
   seoTitle?: string;
   seoDescription?: string;
+  metaDescription?: string; // Alias for seoDescription
+  purpose?: string; // Purpose of the article
+  targetReader?: string; // Target audience/reader
+  relatedArticles?: mongoose.Types.ObjectId[]; // Manually added related articles
   youtubeUrl?: string; // For CMS: original YouTube video URL
   youtubeVideoId?: string;
   transcription?: string;
@@ -80,7 +90,8 @@ const ArticleSchema = new Schema<IArticle>(
     images: [ArticleImageSchema],
     category: {
       type: String,
-      enum: Object.values(ArticleCategory),
+      // Allow any string, but prefer enum values for consistency
+      // enum: Object.values(ArticleCategory), // Commented out to allow custom categories
     },
     tags: [{ type: String }],
     status: {
@@ -93,8 +104,13 @@ const ArticleSchema = new Schema<IArticle>(
     authorId: { type: Schema.Types.ObjectId, ref: 'User' },
     publishedAt: { type: Date },
     readingTime: { type: Number },
+    estimatedReadTime: { type: Number },
     seoTitle: { type: String },
     seoDescription: { type: String },
+    metaDescription: { type: String },
+    purpose: { type: String },
+    targetReader: { type: String },
+    relatedArticles: [{ type: Schema.Types.ObjectId, ref: 'Article' }],
     youtubeUrl: { type: String },
     youtubeVideoId: { type: String },
     transcription: { type: String },
@@ -122,9 +138,11 @@ ArticleSchema.index({ tags: 1 });
 ArticleSchema.index({ category: 1 });
 ArticleSchema.index({ linkedPostId: 1 });
 ArticleSchema.index({ youtubeVideoId: 1 });
+ArticleSchema.index({ relatedArticles: 1 });
 
 // Ensure coverImageUrl defaults to featuredImage if not explicitly set
 // Sync content and body fields
+// Sync aliases for SEO and reading time
 ArticleSchema.pre('save', function(next) {
   if (!this.coverImageUrl && this.featuredImage) {
     this.coverImageUrl = this.featuredImage;
@@ -138,6 +156,20 @@ ArticleSchema.pre('save', function(next) {
   }
   if (this.body && !this.content) {
     this.content = this.body;
+  }
+  // Sync SEO fields
+  if (this.seoDescription && !this.metaDescription) {
+    this.metaDescription = this.seoDescription;
+  }
+  if (this.metaDescription && !this.seoDescription) {
+    this.seoDescription = this.metaDescription;
+  }
+  // Sync reading time fields
+  if (this.readingTime && !this.estimatedReadTime) {
+    this.estimatedReadTime = this.readingTime;
+  }
+  if (this.estimatedReadTime && !this.readingTime) {
+    this.readingTime = this.estimatedReadTime;
   }
   next();
 });

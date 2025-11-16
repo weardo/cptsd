@@ -114,6 +114,36 @@ export async function getRelatedBlogs(blogId: string, topicId?: string, tags?: s
   }
 }
 
+export async function getManuallyRelatedBlogs(relatedArticleIds: string[]) {
+  try {
+    if (!relatedArticleIds || relatedArticleIds.length === 0) {
+      return [];
+    }
+
+    await connectDB();
+
+    // Fetch all blogs
+    const blogs = await Article.find({
+      _id: { $in: relatedArticleIds.map(id => new mongoose.Types.ObjectId(id)) },
+      status: BlogStatus.PUBLISHED,
+      publishedAt: { $lte: new Date() },
+    })
+      .populate('topicId')
+      .lean();
+
+    // Transform and preserve the order from relatedArticleIds
+    const blogMap = new Map(blogs.map(blog => [blog._id.toString(), transformBlog(blog)]));
+    const orderedBlogs = relatedArticleIds
+      .map(id => blogMap.get(id))
+      .filter(blog => blog !== undefined); // Filter out any that weren't found or aren't published
+
+    return orderedBlogs;
+  } catch (error) {
+    console.error('Error fetching manually related blogs:', error);
+    return [];
+  }
+}
+
 export async function getAllTopics() {
   try {
     await connectDB();
@@ -151,10 +181,15 @@ function transformBlog(blog: any) {
       : null,
     category: blog.category || null,
     publishedAt: blog.publishedAt,
-    readingTime: blog.readingTime || null,
+    readingTime: blog.readingTime || blog.estimatedReadTime || null,
+    estimatedReadTime: blog.estimatedReadTime || blog.readingTime || null,
     seoTitle: blog.seoTitle || blog.title,
-    seoDescription: blog.seoDescription || blog.excerpt || null,
+    seoDescription: blog.seoDescription || blog.metaDescription || blog.excerpt || null,
+    metaDescription: blog.metaDescription || blog.seoDescription || null,
+    purpose: blog.purpose || null,
+    targetReader: blog.targetReader || null,
     tags: blog.tags || [],
+    relatedArticles: blog.relatedArticles ? blog.relatedArticles.map((id: any) => id.toString()) : [],
     createdAt: blog.createdAt,
     updatedAt: blog.updatedAt,
   };

@@ -11,8 +11,15 @@ type Topic = {
   slug: string;
 };
 
+type Blog = {
+  id: string;
+  title: string;
+  slug: string;
+};
+
 type BlogFormProps = {
   topics: Topic[];
+  blogs?: Blog[]; // For related articles selection
   initialBlog?: {
     id: string;
     title: string;
@@ -20,12 +27,23 @@ type BlogFormProps = {
     youtubeUrl?: string | null;
     topicId?: string | null;
     customContent?: string | null;
+    slug?: string | null;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    metaDescription?: string | null;
+    purpose?: string | null;
+    targetReader?: string | null;
+    estimatedReadTime?: number | null;
+    readingTime?: number | null;
+    tags?: string[];
+    category?: string | null;
+    relatedArticles?: string[];
   } | null;
 };
 
 type ImageSource = 'generate' | 'stock' | 'none';
 
-export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
+export default function BlogForm({ topics, blogs = [], initialBlog }: BlogFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -39,6 +57,22 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
   const [summarize, setSummarize] = useState(false);
   const [customContent, setCustomContent] = useState(initialBlog?.customContent || '');
   const [showTopicGenerator, setShowTopicGenerator] = useState(false);
+  
+  // New fields state
+  const [slug, setSlug] = useState(initialBlog?.slug || '');
+  const [seoTitle, setSeoTitle] = useState(initialBlog?.seoTitle || initialBlog?.seoTitle || '');
+  const [metaDescription, setMetaDescription] = useState(initialBlog?.metaDescription || initialBlog?.seoDescription || '');
+  const [purpose, setPurpose] = useState(initialBlog?.purpose || '');
+  const [targetReader, setTargetReader] = useState(initialBlog?.targetReader || '');
+  const [estimatedReadTime, setEstimatedReadTime] = useState(initialBlog?.estimatedReadTime || initialBlog?.readingTime || '');
+  const [tags, setTags] = useState<string[]>(initialBlog?.tags || []);
+  const [tagInput, setTagInput] = useState('');
+  const [category, setCategory] = useState(initialBlog?.category || '');
+  const [newCategory, setNewCategory] = useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [selectedRelatedArticles, setSelectedRelatedArticles] = useState<string[]>(initialBlog?.relatedArticles || []);
+  const [relatedArticleSearch, setRelatedArticleSearch] = useState('');
+  const [showRelatedArticleDropdown, setShowRelatedArticleDropdown] = useState(false);
 
   // Auto-show topic generator when in topic mode
   useEffect(() => {
@@ -157,6 +191,20 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
     } else {
       // Manual creation
       const formData = new FormData(e.currentTarget);
+      
+      // Add new fields to formData
+      if (slug) formData.set('slug', slug);
+      if (seoTitle) formData.set('seoTitle', seoTitle);
+      if (metaDescription) formData.set('metaDescription', metaDescription);
+      if (purpose) formData.set('purpose', purpose);
+      if (targetReader) formData.set('targetReader', targetReader);
+      if (estimatedReadTime) formData.set('estimatedReadTime', estimatedReadTime.toString());
+      if (category) formData.set('category', category);
+      if (tags.length > 0) formData.set('tags', JSON.stringify(tags));
+      if (selectedRelatedArticles.length > 0) {
+        formData.set('relatedArticles', JSON.stringify(selectedRelatedArticles));
+      }
+      
       startTransition(async () => {
         const result = await createBlog(formData);
         if (result.success && result.blog) {
@@ -285,6 +333,122 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
   const removeUploadedImage = (index: number) => {
     setUploadedImages(uploadedImages.filter((_, i) => i !== index));
   };
+
+  // Helper functions for new fields
+  const handleAddTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      setTags([...tags, trimmedTag]);
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === '__new__') {
+      setShowNewCategoryInput(true);
+      setCategory('');
+    } else {
+      setCategory(value);
+      setShowNewCategoryInput(false);
+      setNewCategory('');
+    }
+  };
+
+  const handleAddNewCategory = () => {
+    if (newCategory.trim()) {
+      // Convert to uppercase with underscores (e.g., "New Category" -> "NEW_CATEGORY")
+      const categoryValue = newCategory.trim().toUpperCase().replace(/\s+/g, '_');
+      setCategory(categoryValue);
+      setShowNewCategoryInput(false);
+      setNewCategory('');
+    }
+  };
+
+  // Auto-generate slug from title
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    if (!slug || slug === initialBlog?.slug) {
+      const generatedSlug = title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      setSlug(generatedSlug);
+    }
+  };
+
+  // Filter blogs for related articles search
+  const filteredBlogsForRelated = blogs.filter(blog => {
+    if (blog.id === initialBlog?.id) return false;
+    if (selectedRelatedArticles.includes(blog.id)) return false;
+    if (!relatedArticleSearch.trim()) return true;
+    return blog.title.toLowerCase().includes(relatedArticleSearch.toLowerCase()) ||
+           blog.slug.toLowerCase().includes(relatedArticleSearch.toLowerCase());
+  });
+
+  const handleAddRelatedArticle = (articleId: string) => {
+    if (!selectedRelatedArticles.includes(articleId)) {
+      setSelectedRelatedArticles([...selectedRelatedArticles, articleId]);
+      setRelatedArticleSearch('');
+      setShowRelatedArticleDropdown(false);
+    }
+  };
+
+  const handleRemoveRelatedArticle = (articleId: string) => {
+    setSelectedRelatedArticles(selectedRelatedArticles.filter(id => id !== articleId));
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', index.toString());
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/html'), 10);
+    
+    if (dragIndex !== dropIndex) {
+      const newOrder = [...selectedRelatedArticles];
+      const [removed] = newOrder.splice(dragIndex, 1);
+      newOrder.splice(dropIndex, 0, removed);
+      setSelectedRelatedArticles(newOrder);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-related-articles-dropdown]')) {
+        setShowRelatedArticleDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="card">
@@ -629,8 +793,28 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
                 name="title"
                 required
                 defaultValue={initialBlog?.title || ''}
+                onChange={handleTitleChange}
                 className="input w-full"
               />
+            </div>
+
+            <div>
+              <label htmlFor="slug" className="block text-sm font-medium mb-2">
+                Slug *
+              </label>
+              <input
+                type="text"
+                id="slug"
+                name="slug"
+                required
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className="input w-full"
+                placeholder="url-friendly-slug"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                URL-friendly version of the title (auto-generated from title)
+              </p>
             </div>
 
             <div>
@@ -655,14 +839,268 @@ export default function BlogForm({ topics, initialBlog }: BlogFormProps) {
               <label htmlFor="category" className="block text-sm font-medium mb-2">
                 Category (Optional)
               </label>
-              <select id="category" name="category" className="input w-full">
+              <select 
+                id="category" 
+                name="category" 
+                className="input w-full"
+                value={category}
+                onChange={handleCategoryChange}
+              >
                 <option value="">Select a category</option>
                 <option value="BASICS">Basics</option>
                 <option value="INDIA_CONTEXT">India Context</option>
                 <option value="DAILY_LIFE">Daily Life</option>
                 <option value="HEALING">Healing</option>
                 <option value="RELATIONSHIPS">Relationships</option>
+                <option value="__new__">+ Add New Category</option>
               </select>
+              {showNewCategoryInput && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Enter new category name"
+                    className="input flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewCategory();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewCategory}
+                    className="btn btn-secondary"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewCategoryInput(false);
+                      setNewCategory('');
+                    }}
+                    className="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="purpose" className="block text-sm font-medium mb-2">
+                Purpose
+              </label>
+              <textarea
+                id="purpose"
+                name="purpose"
+                rows={2}
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                className="input w-full"
+                placeholder="What is the purpose of this article?"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="targetReader" className="block text-sm font-medium mb-2">
+                Target Reader
+              </label>
+              <input
+                type="text"
+                id="targetReader"
+                name="targetReader"
+                value={targetReader}
+                onChange={(e) => setTargetReader(e.target.value)}
+                className="input w-full"
+                placeholder="Who is this article for? (e.g., 'Beginners', 'Survivors', 'Therapists')"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="seoTitle" className="block text-sm font-medium mb-2">
+                SEO Title
+              </label>
+              <input
+                type="text"
+                id="seoTitle"
+                name="seoTitle"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                className="input w-full"
+                placeholder="SEO-optimized title (defaults to article title)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to use the article title
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="metaDescription" className="block text-sm font-medium mb-2">
+                Meta Description
+              </label>
+              <textarea
+                id="metaDescription"
+                name="metaDescription"
+                rows={3}
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                className="input w-full"
+                placeholder="Brief description for search engines (150-160 characters recommended)"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="estimatedReadTime" className="block text-sm font-medium mb-2">
+                Estimated Read Time (minutes)
+              </label>
+              <input
+                type="number"
+                id="estimatedReadTime"
+                name="estimatedReadTime"
+                min="1"
+                value={estimatedReadTime}
+                onChange={(e) => setEstimatedReadTime(e.target.value)}
+                className="input w-full"
+                placeholder="5"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Tags / Hashtags
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  className="input flex-1"
+                  placeholder="Enter a tag and press Enter"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="btn btn-secondary"
+                >
+                  Add Tag
+                </button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    >
+                      #{tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div data-related-articles-dropdown>
+              <label className="block text-sm font-medium mb-2">
+                Related Articles (Manually Selected)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={relatedArticleSearch}
+                  onChange={(e) => {
+                    setRelatedArticleSearch(e.target.value);
+                    setShowRelatedArticleDropdown(true);
+                  }}
+                  onFocus={() => setShowRelatedArticleDropdown(true)}
+                  placeholder="Search and select articles..."
+                  className="input w-full"
+                />
+                {showRelatedArticleDropdown && filteredBlogsForRelated.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredBlogsForRelated.map((blog) => (
+                      <button
+                        key={blog.id}
+                        type="button"
+                        onClick={() => handleAddRelatedArticle(blog.id)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-sm text-gray-900">{blog.title}</div>
+                        <div className="text-xs text-gray-500">{blog.slug}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showRelatedArticleDropdown && relatedArticleSearch.trim() && filteredBlogsForRelated.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-sm text-gray-500">
+                    No articles found matching "{relatedArticleSearch}"
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Search and select articles one by one. These will be displayed separately from auto-suggested related articles.
+              </p>
+              
+              {/* Selected Articles List */}
+              {selectedRelatedArticles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">
+                    Selected Articles (drag to reorder):
+                  </p>
+                  <div className="space-y-2">
+                    {selectedRelatedArticles.map((articleId, index) => {
+                      const article = blogs.find(b => b.id === articleId);
+                      return article ? (
+                        <div
+                          key={articleId}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={handleDragOver}
+                          onDragEnd={handleDragEnd}
+                          onDrop={(e) => handleDrop(e, index)}
+                          className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-move hover:bg-gray-100 transition-colors group"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex flex-col gap-1 text-gray-400 group-hover:text-gray-600">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm text-gray-900 truncate">{article.title}</div>
+                              <div className="text-xs text-gray-500 truncate">{article.slug}</div>
+                            </div>
+                            <div className="text-xs text-gray-400 font-medium">
+                              #{index + 1}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRelatedArticle(articleId)}
+                            className="ml-3 text-red-600 hover:text-red-800 transition-colors"
+                            title="Remove article"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

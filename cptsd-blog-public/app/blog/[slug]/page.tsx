@@ -1,6 +1,7 @@
 import {
   getBlogBySlug,
   getRelatedBlogs,
+  getManuallyRelatedBlogs,
   getAllTopics,
   getPublishedBlogs,
 } from '@/lib/blogActions';
@@ -82,8 +83,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
-  const [relatedBlogs, topics, recentBlogs] = await Promise.all([
+  const [autoRelatedBlogs, manuallyRelatedBlogs, topics, recentBlogs] = await Promise.all([
     getRelatedBlogs(blog.id, blog.topic?.id, blog.tags, 5),
+    blog.relatedArticles && blog.relatedArticles.length > 0 
+      ? getManuallyRelatedBlogs(blog.relatedArticles)
+      : Promise.resolve([]),
     getAllTopics(),
     getPublishedBlogs({ limit: 5 }),
   ]);
@@ -319,6 +323,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     </ReactMarkdown>
                   </div>
 
+                  {/* Tags at Bottom */}
+                  {blog.tags && blog.tags.length > 0 && (
+                    <div className="mt-12 pt-8 border-t border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Tags
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {blog.tags.map((tag: string, idx: number) => (
+                          <Link
+                            key={idx}
+                            href={`/?search=${encodeURIComponent(tag)}`}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full border border-gray-200 font-medium hover:border-[#5b8a9f] hover:text-[#5b8a9f] hover:bg-[#5b8a9f]/10 transition-colors"
+                          >
+                            #{tag}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Social Sharing */}
                   <div className="mt-12 pt-8 border-t border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -367,7 +391,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           {/* Right Sidebar */}
           <RelatedPostsSidebar 
-            relatedBlogs={relatedBlogs}
+            relatedBlogs={autoRelatedBlogs}
+            manuallyRelatedBlogs={manuallyRelatedBlogs}
             tags={blog.tags}
           />
       </div>

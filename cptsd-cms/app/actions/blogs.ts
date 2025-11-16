@@ -35,38 +35,83 @@ export async function createBlog(formData: FormData) {
 
     const title = formData.get('title') as string;
     const content = formData.get('content') as string;
+    const slug = formData.get('slug') as string | null;
     const youtubeUrl = formData.get('youtubeUrl') as string | null;
     const topicId = formData.get('topicId') as string | null;
     const category = formData.get('category') as string | null;
     const customContentRaw = formData.get('customContent') as string | null;
+    const seoTitle = formData.get('seoTitle') as string | null;
+    const metaDescription = formData.get('metaDescription') as string | null;
+    const purpose = formData.get('purpose') as string | null;
+    const targetReader = formData.get('targetReader') as string | null;
+    const estimatedReadTime = formData.get('estimatedReadTime') as string | null;
+    const tagsJson = formData.get('tags') as string | null;
+    const relatedArticlesJson = formData.get('relatedArticles') as string | null;
+    
     // Handle "$undefined" string from Next.js serialization
     const customContent = customContentRaw && customContentRaw !== '$undefined' ? customContentRaw : null;
 
-    // Generate slug from title
-    const baseSlug = title
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    // Generate slug from title if not provided
+    let finalSlug = slug;
+    if (!finalSlug || finalSlug.trim() === '') {
+      finalSlug = title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
 
     // Ensure unique slug
-    const slug = await ensureUniqueSlug(
-      baseSlug,
+    const uniqueSlug = await ensureUniqueSlug(
+      finalSlug,
       async (s) => {
         const existing = await Article.findOne({ slug: s }).lean();
         return !!existing;
       }
     );
 
+    // Parse tags
+    let tags: string[] = [];
+    if (tagsJson && tagsJson !== '' && tagsJson !== '$undefined') {
+      try {
+        tags = JSON.parse(tagsJson);
+      } catch (e) {
+        // If not JSON, treat as comma-separated string
+        tags = tagsJson.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      }
+    }
+
+    // Parse related articles
+    let relatedArticles: mongoose.Types.ObjectId[] = [];
+    if (relatedArticlesJson && relatedArticlesJson !== '' && relatedArticlesJson !== '$undefined') {
+      try {
+        const articleIds = JSON.parse(relatedArticlesJson);
+        if (Array.isArray(articleIds)) {
+          relatedArticles = articleIds.map(id => new mongoose.Types.ObjectId(id));
+        }
+      } catch (e) {
+        console.error('Error parsing related articles:', e);
+      }
+    }
+
     const blog = await Article.create({
       title,
-      slug,
+      slug: uniqueSlug,
       content,
       youtubeUrl: youtubeUrl || undefined,
       topicId: topicId || undefined,
       category: category || undefined,
       customContent: customContent || undefined,
+      seoTitle: seoTitle || undefined,
+      seoDescription: metaDescription || undefined,
+      metaDescription: metaDescription || undefined,
+      purpose: purpose || undefined,
+      targetReader: targetReader || undefined,
+      estimatedReadTime: estimatedReadTime ? parseInt(estimatedReadTime, 10) : undefined,
+      readingTime: estimatedReadTime ? parseInt(estimatedReadTime, 10) : undefined,
+      tags: tags.length > 0 ? tags : undefined,
+      relatedArticles: relatedArticles.length > 0 ? relatedArticles : undefined,
       status: BlogStatus.DRAFT,
     });
 
@@ -102,6 +147,11 @@ export async function updateBlog(id: string, formData: FormData) {
     const customContent = formData.get('customContent') as string | null;
     const seoTitle = formData.get('seoTitle') as string | null;
     const seoDescription = formData.get('seoDescription') as string | null;
+    const metaDescription = formData.get('metaDescription') as string | null;
+    const purpose = formData.get('purpose') as string | null;
+    const targetReader = formData.get('targetReader') as string | null;
+    const estimatedReadTime = formData.get('estimatedReadTime') as string | null;
+    const relatedArticlesJson = formData.get('relatedArticles') as string | null;
 
     const updateData: any = {};
 
@@ -133,6 +183,20 @@ export async function updateBlog(id: string, formData: FormData) {
     
     if (seoTitle !== null) updateData.seoTitle = seoTitle || undefined;
     if (seoDescription !== null) updateData.seoDescription = seoDescription || undefined;
+    if (metaDescription !== null) {
+      updateData.metaDescription = metaDescription || undefined;
+      // Sync with seoDescription if seoDescription is not set
+      if (!updateData.seoDescription && metaDescription) {
+        updateData.seoDescription = metaDescription;
+      }
+    }
+    if (purpose !== null) updateData.purpose = purpose || undefined;
+    if (targetReader !== null) updateData.targetReader = targetReader || undefined;
+    if (estimatedReadTime !== null) {
+      const readTime = estimatedReadTime ? parseInt(estimatedReadTime, 10) : undefined;
+      updateData.estimatedReadTime = readTime;
+      updateData.readingTime = readTime; // Sync with readingTime
+    }
 
     // Handle tags - can be JSON array or comma-separated string
     if (tagsJson !== null && tagsJson !== '' && tagsJson !== '$undefined') {
@@ -154,6 +218,20 @@ export async function updateBlog(id: string, formData: FormData) {
       }
     } else if (tagsJson === '' || tagsJson === '$undefined') {
       updateData.tags = [];
+    }
+
+    // Handle related articles
+    if (relatedArticlesJson !== null && relatedArticlesJson !== '' && relatedArticlesJson !== '$undefined') {
+      try {
+        const articleIds = JSON.parse(relatedArticlesJson);
+        if (Array.isArray(articleIds)) {
+          updateData.relatedArticles = articleIds.map((aid: string) => new mongoose.Types.ObjectId(aid));
+        }
+      } catch (e) {
+        console.error('Error parsing related articles:', e);
+      }
+    } else if (relatedArticlesJson === '' || relatedArticlesJson === '$undefined') {
+      updateData.relatedArticles = [];
     }
 
     // Set publishedAt if status is PUBLISHED
@@ -680,9 +758,15 @@ function transformBlogFromDoc(blog: any) {
     authorId: blog.authorId ? String(blog.authorId) : null,
     publishedAt: blog.publishedAt || null,
     readingTime: blog.readingTime || null,
+    estimatedReadTime: blog.estimatedReadTime || blog.readingTime || null,
     seoTitle: blog.seoTitle || null,
     seoDescription: blog.seoDescription || null,
+    metaDescription: blog.metaDescription || blog.seoDescription || null,
+    purpose: blog.purpose || null,
+    targetReader: blog.targetReader || null,
     tags: blog.tags || [],
+    category: blog.category || null,
+    relatedArticles: blog.relatedArticles ? blog.relatedArticles.map((id: any) => String(id)) : [],
     customContent: blog.customContent || null,
     regenerationHistory: blog.regenerationHistory || [],
     createdAt: blog.createdAt,

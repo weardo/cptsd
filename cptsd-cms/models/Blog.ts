@@ -41,10 +41,15 @@ export interface IBlog extends Document {
   authorId?: mongoose.Types.ObjectId;
   publishedAt?: Date;
   readingTime?: number; // Estimated reading time in minutes
+  estimatedReadTime?: number; // Alias for readingTime
   seoTitle?: string;
   seoDescription?: string;
+  metaDescription?: string; // Alias for seoDescription
+  purpose?: string; // Purpose of the article
+  targetReader?: string; // Target audience/reader
   tags?: string[];
   category?: ArticleCategory; // Article category: BASICS, INDIA_CONTEXT, DAILY_LIFE, HEALING, RELATIONSHIPS
+  relatedArticles?: mongoose.Types.ObjectId[]; // Manually added related articles
   linkedPostId?: mongoose.Types.ObjectId; // Optional link to AI-generated "post" entity
   customContent?: string; // User-added custom content
   regenerationHistory?: Array<{
@@ -90,13 +95,18 @@ const BlogSchema = new Schema<IBlog>(
     authorId: { type: Schema.Types.ObjectId, ref: 'User' },
     publishedAt: { type: Date },
     readingTime: { type: Number },
+    estimatedReadTime: { type: Number },
     seoTitle: { type: String },
     seoDescription: { type: String },
+    metaDescription: { type: String },
+    purpose: { type: String },
+    targetReader: { type: String },
     tags: [{ type: String }],
     category: {
       type: String,
-      enum: Object.values(ArticleCategory),
+      // Allow any string to support custom categories
     },
+    relatedArticles: [{ type: Schema.Types.ObjectId, ref: 'Blog' }],
     linkedPostId: { type: Schema.Types.ObjectId, ref: 'Post' },
     customContent: { type: String },
     regenerationHistory: [
