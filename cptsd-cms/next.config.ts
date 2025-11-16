@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Increase Server Actions body size limit to support larger multipart form submissions
   experimental: {
-    // Accept larger multipart bodies through middleware/edge runtime (prevents truncated forms)
-    middlewareClientMaxBodySize: '30mb',
+    // Accept larger multipart bodies through proxy/edge runtime (prevents truncated forms)
+    proxyClientMaxBodySize: '30mb',
     serverActions: {
       bodySizeLimit: '30mb',
     },
