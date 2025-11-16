@@ -2,6 +2,8 @@ import { getTopics } from '@/app/actions/topics';
 
 import PostForm from '@/components/PostForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewPostPage() {
   const topicsResult = await getTopics();
   const topics = topicsResult.topics || [];

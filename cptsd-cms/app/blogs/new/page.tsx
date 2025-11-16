@@ -3,6 +3,8 @@ import { getBlogs } from '@/app/actions/blogs';
 
 import BlogForm from '@/components/BlogForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewBlogPage() {
   const [topicsResult, blogsResult] = await Promise.all([
     getTopics(),

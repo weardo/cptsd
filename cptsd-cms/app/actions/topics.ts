@@ -155,8 +155,8 @@ export async function deleteTopic(id: string) {
 export async function getTopics() {
   try {
     // During build time, skip database queries and return empty array
-    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
-                        (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI);
+    // Only check for actual build phase, not production runtime
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
     if (isBuildTime) {
       return { success: true, topics: [] };
     }
