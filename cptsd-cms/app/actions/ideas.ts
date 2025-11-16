@@ -1,9 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import ContentIdea, { IdeaStatus, IContentIdeaItem } from '@cptsd/db/models/ContentIdea';
-import Topic from '@cptsd/db/models/Topic';
-import Post from '@cptsd/db/models/Post';
+import { ContentIdea, IdeaStatus, IContentIdeaItem, Topic, Post } from '@cptsd/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';

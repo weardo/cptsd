@@ -2,11 +2,7 @@ import { getPosts } from '@/app/actions/posts';
 
 import MediaGallery from '@/components/MediaGallery';
 import connectDB from '@/lib/mongodb';
-import GeneratedAsset from '@cptsd/db/models/GeneratedAsset';
-import StandaloneGeneration from '@cptsd/db/models/StandaloneGeneration';
-import Post from '@cptsd/db/models/Post';
-import { Article } from '@cptsd/db';
-import Topic from '@cptsd/db/models/Topic';
+import { GeneratedAsset, StandaloneGeneration, Post, Article, Topic } from '@cptsd/db';
 import mongoose from 'mongoose';
 
 // Force dynamic rendering to avoid MongoDB connection during build

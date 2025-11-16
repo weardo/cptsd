@@ -1,9 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import GeneratedAsset, { AssetKind, CompositionType } from '@cptsd/db/models/GeneratedAsset';
-import Post from '@cptsd/db/models/Post';
-import Topic from '@cptsd/db/models/Topic';
+import { GeneratedAsset, AssetKind, CompositionType, Post, Topic } from '@cptsd/db';
 import { generatePostImages, GenerateImageOptions, generateImagesForPost, ImageVariant } from '@/lib/imageGeneration';
 import { uploadToS3 } from '@/lib/s3';
 import { revalidatePath } from 'next/cache';

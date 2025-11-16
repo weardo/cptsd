@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Resource, { ResourceType, ResourceCategory } from '@cptsd/db/models/Resource';
+import { Resource, ResourceType, ResourceCategory } from '@cptsd/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';

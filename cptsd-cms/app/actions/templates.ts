@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import PromptTemplate from '@cptsd/db/models/PromptTemplate';
+import { PromptTemplate } from '@cptsd/db';
 import { generateSlug } from '@/lib/utils/slug';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';

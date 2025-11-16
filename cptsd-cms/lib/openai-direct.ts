@@ -1,6 +1,5 @@
 import connectDB from './mongodb';
-import Post from '@cptsd/db/models/Post';
-import Topic from '@cptsd/db/models/Topic';
+import { Post, Topic } from '@cptsd/db';
 import { generateContent, GenerateContentRequest } from './openai';
 
 /**

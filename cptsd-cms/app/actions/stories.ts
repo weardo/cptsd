@@ -1,7 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Story, { StoryStatus } from '@cptsd/db/models/Story';
+import { Story, StoryStatus } from '@cptsd/db';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

@@ -1,8 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import Topic from '@cptsd/db/models/Topic';
-import Post from '@cptsd/db/models/Post';
+import { Topic, Post } from '@cptsd/db';
 import { generateSlug } from '@/lib/utils/slug';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';

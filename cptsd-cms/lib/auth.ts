@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuthConfig } from './config';
 import bcrypt from 'bcryptjs';
 import connectDB from './mongodb';
-import User from '@cptsd/db/models/User';
+import { User } from '@cptsd/db';
 
 export const authOptions: NextAuthOptions = {
   // No adapter needed for JWT strategy - credentials are handled in authorize callback

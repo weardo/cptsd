@@ -1,6 +1,6 @@
 import { getStories } from '@/app/actions/stories';
 
-import { StoryStatus } from '@cptsd/db/models/Story';
+import { StoryStatus } from '@cptsd/db';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

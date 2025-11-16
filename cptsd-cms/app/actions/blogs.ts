@@ -1,8 +1,7 @@
 'use server';
 
 import connectDB from '@/lib/mongodb';
-import { Article, ArticleStatus as BlogStatus } from '@cptsd/db';
-import Topic from '@cptsd/db/models/Topic';
+import { Article, ArticleStatus as BlogStatus, Topic, GeneratedAsset, AssetKind } from '@cptsd/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { transcribeYouTubeVideo, getYouTubeVideoMetadata } from '@/lib/youtube';
@@ -12,7 +11,6 @@ import { ensureUniqueSlug } from '@/lib/utils/slug';
 import { searchStockImages, downloadStockImage, getSuggestedImageQueries } from '@/lib/stockImages';
 import { generateBlogTopics, generateTopicsFromContent } from '@/lib/blogTopics';
 import { uploadToS3 } from '@/lib/s3';
-import GeneratedAsset, { AssetKind } from '@cptsd/db/models/GeneratedAsset';
 import mongoose from 'mongoose';
 
 const blogSchema = z.object({
