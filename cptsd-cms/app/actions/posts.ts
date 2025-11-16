@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { generateContentForPost } from '@/lib/openai-direct';
 import mongoose from 'mongoose';
 import { uploadToS3 } from '@/lib/s3';
+import JSZip from 'jszip';
 
 const postSchema = z.object({
   topicId: z.string().min(1, 'Topic ID is required'), // MongoDB ObjectId as string
@@ -98,25 +99,54 @@ export async function updatePost(id: string, formData: FormData) {
   try {
     await connectDB();
     
-    // If a file was sent directly in the server action request, process it and
-    // convert to a finchScreenshotUrl before handling text fields.
-    // This allows drag/drop or browser auto field names like "1_files".
+    // Collect any files sent directly in the server action request (supports multiple)
+    // Browser may send names like "1_files", etc. We don't depend on field name.
+    const uploadedUrls: string[] = [];
+    const filesToProcess: File[] = [];
     for (const [, value] of formData.entries()) {
-      if (value instanceof File) {
-        // Basic validation (accept common image types up to ~20MB)
-        const maxSize = 20 * 1024 * 1024;
-        if (value.size > maxSize) {
-          return { success: false, error: 'Image exceeds 20MB limit' };
+      if (value instanceof File && value.size > 0) {
+        filesToProcess.push(value);
+      }
+    }
+    if (filesToProcess.length > 0) {
+      // Validate and upload all files
+      const maxSize = 20 * 1024 * 1024; // 20MB per file
+      const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      for (const file of filesToProcess) {
+        // Handle ZIP files that contain images
+        const isZip = file.type === 'application/zip' || file.name.toLowerCase().endsWith('.zip');
+        if (isZip) {
+          try {
+            const zipBuffer = Buffer.from(await file.arrayBuffer());
+            const zip = await JSZip.loadAsync(zipBuffer);
+            for (const [entryName, entry] of Object.entries(zip.files)) {
+              if (!entry.dir && /\.(jpg|jpeg|png|gif|webp)$/i.test(entryName)) {
+                const fileData = await entry.async('nodebuffer');
+                const imgBuffer = Buffer.from(fileData);
+                const url = await uploadToS3(imgBuffer, entryName.split('/').pop() || entryName, 'finch-screenshots');
+                uploadedUrls.push(url);
+              }
+            }
+          } catch (zipErr) {
+            console.error('Error extracting ZIP in updatePost:', zipErr);
+            return { success: false, error: 'Failed to extract ZIP file. Ensure it contains valid image files.' };
+          }
+          continue;
         }
-        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!allowed.includes(value.type)) {
-          return { success: false, error: 'Only JPEG/PNG/GIF/WEBP images are allowed' };
+        // Regular single image flows
+        if (file.size > maxSize) {
+          return { success: false, error: `Image ${file.name} exceeds 20MB limit` };
         }
-        const buffer = Buffer.from(await value.arrayBuffer());
-        const url = await uploadToS3(buffer, value.name, 'finch-screenshots');
-        // Normalize into expected URL field so the rest of the flow is consistent
-        formData.set('finchScreenshotUrl', url);
-        break; // Only process the first file
+        if (!allowed.includes(file.type)) {
+          return { success: false, error: `Invalid type for ${file.name}. Allowed: JPEG, PNG, GIF, WEBP` };
+        }
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const url = await uploadToS3(buffer, file.name, 'finch-screenshots');
+        uploadedUrls.push(url);
+      }
+      // Normalize: first image -> finchScreenshotUrl, all images appended to aiBackgroundUrls
+      if (uploadedUrls[0]) {
+        formData.set('finchScreenshotUrl', uploadedUrls[0]);
       }
     }
     
@@ -144,6 +174,24 @@ export async function updatePost(id: string, formData: FormData) {
         }
       } catch (e) {
         console.error('Error parsing manualSlidePrompts:', e);
+      }
+    }
+    
+    // If we uploaded multiple images, merge additional ones into aiBackgroundUrls
+    if (uploadedUrls.length > 0) {
+      try {
+        const existing = await Post.findById(id).lean();
+        const existingBackgrounds: string[] = Array.isArray(existing?.aiBackgroundUrls)
+          ? (existing!.aiBackgroundUrls as unknown as string[])
+          : [];
+        const additional = uploadedUrls.slice(1); // beyond first (used as finchScreenshotUrl)
+        updateData.aiBackgroundUrls = [...existingBackgrounds, ...additional];
+      } catch (e) {
+        // Fallback: still set backgrounds to the additional if fetch failed
+        const additional = uploadedUrls.slice(1);
+        if (additional.length > 0) {
+          updateData.aiBackgroundUrls = additional;
+        }
       }
     }
     
