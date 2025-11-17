@@ -31,8 +31,12 @@ function kindLabel(kind?: string) {
 
 function resolveTargetUrl(item: FeaturedItem): string | null {
 	if (item.kind === 'EXTERNAL_LINK' && item.externalUrl) return item.externalUrl;
-	if (item.kind === 'INTERNAL_ARTICLE' && item.internalArticleSlug)
-		return `${BLOG_BASE}/learn/${item.internalArticleSlug}`;
+	if (item.kind === 'INTERNAL_ARTICLE' && item.internalArticleSlug) {
+		// Check if article is a learn resource - if so, use /learn route, otherwise use blog domain
+		// Note: We'd need to fetch the article to check isLearnResource, but for now we'll use the blog domain
+		// This will be handled by the actual article page routing
+		return `${BLOG_BASE}/${item.internalArticleSlug}`;
+	}
 	if (item.kind === 'INTERNAL_RESOURCE') {
 		// Basic mapping to sections. Could add ?focus=<id> later.
 		return '/resources';

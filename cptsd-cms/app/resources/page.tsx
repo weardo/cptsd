@@ -22,7 +22,7 @@ export default async function ResourcesPage({
     type: params.type as any,
     category: params.category as any,
     status: params.status,
-    featured: params.featured === 'true',
+    featured: params.featured ? params.featured === 'true' : undefined,
     search: params.search,
   });
 

@@ -48,6 +48,10 @@ export type { IStandaloneGeneration } from './models/StandaloneGeneration';
 export { default as SupportiveMessage, PetType as SupportiveMessagePetType } from './models/SupportiveMessage';
 export type { ISupportiveMessage } from './models/SupportiveMessage';
 
+export { default as LearnSection } from './models/LearnSection';
+export type { ILearnSection, ILearnItem } from './models/LearnSection';
+export type { LearnItemType } from './models/LearnSection';
+
 // Backward compatibility: export Article as Blog for migration period
 export { default as Blog } from './models/Article';
 export { ArticleStatus as BlogStatus } from './models/Article';

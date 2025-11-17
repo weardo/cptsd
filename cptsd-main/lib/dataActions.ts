@@ -3,11 +3,54 @@ import { Article, ArticleStatus as BlogStatus, Story, StoryStatus, Resource, Res
 import mongoose from 'mongoose';
 
 // Blog/Article helpers
+export async function getBlogBySlug(slug: string) {
+  try {
+    await connectDB();
+
+    const blog = await Article.findOne({
+      slug,
+      status: BlogStatus.PUBLISHED,
+      publishedAt: { $lte: new Date() },
+    })
+      .lean();
+
+    if (!blog) {
+      return null;
+    }
+
+    return {
+      id: blog._id.toString(),
+      title: blog.title,
+      slug: blog.slug,
+      excerpt: blog.excerpt || blog.summary || null,
+      content: blog.content || blog.body || '',
+      featuredImage: blog.featuredImage || blog.coverImageUrl || null,
+      publishedAt: blog.publishedAt,
+      tags: blog.tags || [],
+      isLearnResource: blog.isLearnResource || false,
+      featured: blog.featured || false,
+      readingTime: blog.readingTime || blog.estimatedReadTime || null,
+      seoTitle: blog.seoTitle || blog.title,
+      seoDescription: blog.seoDescription || blog.metaDescription || blog.excerpt || null,
+      category: blog.category || null,
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('MONGODB_URI is not set')) {
+      console.warn('⚠️  MongoDB not configured. Blog not found.');
+      return null;
+    }
+    console.error('Error fetching blog:', error);
+    return null;
+  }
+}
+
 export async function getPublishedBlogs(filters?: {
   limit?: number;
   skip?: number;
   category?: string;
   tags?: string[];
+  featured?: boolean;
+  isLearnResource?: boolean;
 }) {
   try {
     await connectDB();
@@ -19,6 +62,14 @@ export async function getPublishedBlogs(filters?: {
 
     if (filters?.tags && filters.tags.length > 0) {
       query.tags = { $in: filters.tags };
+    }
+
+    if (filters?.featured !== undefined) {
+      query.featured = filters.featured;
+    }
+
+    if (filters?.isLearnResource !== undefined) {
+      query.isLearnResource = filters.isLearnResource;
     }
 
     const blogs = await Article.find(query)
@@ -35,6 +86,8 @@ export async function getPublishedBlogs(filters?: {
       featuredImage: blog.featuredImage || null,
       publishedAt: blog.publishedAt,
       tags: blog.tags || [],
+      isLearnResource: blog.isLearnResource || false,
+      featured: blog.featured || false,
     }));
   } catch (error) {
     // Handle missing MONGODB_URI gracefully
@@ -65,6 +118,7 @@ export async function getBlogsByCategory() {
       const query: any = {
         status: BlogStatus.PUBLISHED,
         publishedAt: { $lte: new Date() },
+        isLearnResource: true, // Only show learn resources on learn page
         $or: tagPatterns.map((pattern) => ({
           tags: { $regex: pattern, $options: 'i' },
         })),
@@ -80,6 +134,7 @@ export async function getBlogsByCategory() {
         title: blog.title,
         slug: blog.slug,
         excerpt: blog.excerpt || blog.summary || null,
+        isLearnResource: blog.isLearnResource || false,
       }));
     }
 

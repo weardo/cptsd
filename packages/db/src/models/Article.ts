@@ -57,6 +57,8 @@ export interface IArticle extends Document {
   youtubeVideoId?: string;
   transcription?: string;
   customContent?: string; // User-added custom content
+  isLearnResource?: boolean; // If true, article should be displayed under /learn route in cptsd-main
+  featured?: boolean; // If true, article should be displayed in featured reading section
   regenerationHistory?: Array<{
     timestamp: Date;
     content: string;
@@ -115,6 +117,8 @@ const ArticleSchema = new Schema<IArticle>(
     youtubeVideoId: { type: String },
     transcription: { type: String },
     customContent: { type: String },
+    isLearnResource: { type: Boolean, default: false },
+    featured: { type: Boolean, default: false },
     regenerationHistory: [
       {
         timestamp: { type: Date, default: Date.now },

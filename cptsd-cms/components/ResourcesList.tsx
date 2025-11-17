@@ -94,6 +94,25 @@ export default function ResourcesList({ resources, initialFilters }: ResourcesLi
             ))}
           </select>
 
+          <select
+            defaultValue={initialFilters?.status || ''}
+            onChange={(e) => {
+              const params = new URLSearchParams(window.location.search);
+              if (e.target.value) {
+                params.set('status', e.target.value);
+              } else {
+                params.delete('status');
+              }
+              window.location.search = params.toString();
+            }}
+            className="input text-sm"
+          >
+            <option value="">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="DRAFT">Draft</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+
           <input
             type="text"
             placeholder="Search resources..."
@@ -138,11 +157,22 @@ export default function ResourcesList({ resources, initialFilters }: ResourcesLi
                     <p className="text-sm text-gray-600 mb-2">by {resource.author}</p>
                   )}
                 </div>
-                {resource.featured && (
-                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                    Featured
-                  </span>
-                )}
+                <div className="flex flex-col gap-1 items-end">
+                  {resource.featured && (
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                      Featured
+                    </span>
+                  )}
+                  {resource.status !== 'ACTIVE' && (
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      resource.status === 'DRAFT' 
+                        ? 'bg-gray-100 text-gray-600' 
+                        : 'bg-orange-100 text-orange-600'
+                    }`}>
+                      {resource.status}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <p className="text-sm text-gray-700 mb-3 line-clamp-2">{resource.description}</p>

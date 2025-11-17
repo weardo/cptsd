@@ -207,6 +207,9 @@ export async function getResources(filters?: {
       .sort({ featured: -1, createdAt: -1 })
       .lean();
 
+    console.log(`[getResources] Query:`, JSON.stringify(query));
+    console.log(`[getResources] Found ${resources.length} resources`);
+
     return {
       success: true,
       resources: resources.map((resource) => transformResourceFromDoc(resource)),

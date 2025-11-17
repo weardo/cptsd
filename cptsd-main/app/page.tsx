@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const [latestBlogs, stories, featuredItems] = await Promise.all([
-    getPublishedBlogs({ limit: 5 }),
+    getPublishedBlogs({ limit: 5, featured: true }), // Only get featured articles
     getApprovedStories(3),
     getFeaturedContent(6),
   ]);
@@ -173,10 +173,14 @@ export default async function HomePage() {
         <h2 className="text-3xl font-bold text-gray-900 mb-6">Featured reading</h2>
         {latestBlogs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestBlogs.slice(0, 4).map((blog) => (
+            {latestBlogs.slice(0, 4).map((blog) => {
+              const blogUrl = blog.isLearnResource 
+                ? `/learn/${blog.slug}` 
+                : `${BLOG_DOMAIN}/${blog.slug}`;
+              return (
               <Link
                 key={blog.id}
-                href={`${BLOG_DOMAIN}/learn/${blog.slug}`}
+                href={blogUrl}
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
               >
                 {blog.featuredImage && (
@@ -200,7 +204,8 @@ export default async function HomePage() {
                   </p>
                 )}
               </Link>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-600 text-center py-8">

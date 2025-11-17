@@ -47,6 +47,8 @@ export async function createBlog(formData: FormData) {
     const estimatedReadTime = formData.get('estimatedReadTime') as string | null;
     const tagsJson = formData.get('tags') as string | null;
     const relatedArticlesJson = formData.get('relatedArticles') as string | null;
+    const isLearnResource = formData.get('isLearnResource') === 'true';
+    const featured = formData.get('featured') === 'true';
     
     // Handle "$undefined" string from Next.js serialization
     const customContent = customContentRaw && customContentRaw !== '$undefined' ? customContentRaw : null;
@@ -112,6 +114,8 @@ export async function createBlog(formData: FormData) {
       readingTime: estimatedReadTime ? parseInt(estimatedReadTime, 10) : undefined,
       tags: tags.length > 0 ? tags : undefined,
       relatedArticles: relatedArticles.length > 0 ? relatedArticles : undefined,
+      isLearnResource: isLearnResource || undefined,
+      featured: featured || undefined,
       status: BlogStatus.DRAFT,
     });
 
@@ -152,6 +156,8 @@ export async function updateBlog(id: string, formData: FormData) {
     const targetReader = formData.get('targetReader') as string | null;
     const estimatedReadTime = formData.get('estimatedReadTime') as string | null;
     const relatedArticlesJson = formData.get('relatedArticles') as string | null;
+    const isLearnResource = formData.get('isLearnResource') as string | null;
+    const featured = formData.get('featured') as string | null;
 
     const updateData: any = {};
 
@@ -232,6 +238,14 @@ export async function updateBlog(id: string, formData: FormData) {
       }
     } else if (relatedArticlesJson === '' || relatedArticlesJson === '$undefined') {
       updateData.relatedArticles = [];
+    }
+
+    if (isLearnResource !== null) {
+      updateData.isLearnResource = isLearnResource === 'true';
+    }
+
+    if (featured !== null) {
+      updateData.featured = featured === 'true';
     }
 
     // Set publishedAt if status is PUBLISHED
@@ -767,6 +781,8 @@ function transformBlogFromDoc(blog: any) {
     tags: blog.tags || [],
     category: blog.category || null,
     relatedArticles: blog.relatedArticles ? blog.relatedArticles.map((id: any) => String(id)) : [],
+    isLearnResource: blog.isLearnResource || false,
+    featured: blog.featured || false,
     customContent: blog.customContent || null,
     regenerationHistory: blog.regenerationHistory || [],
     createdAt: blog.createdAt,

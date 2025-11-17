@@ -40,6 +40,7 @@ export default function Sidebar() {
         { href: '/templates', label: 'Templates', icon: '📋' },
         { href: '/resources', label: 'Resources', icon: '📚' },
         { href: '/studio/featured', label: 'Featured', icon: '🌟' },
+        { href: '/studio/learn', label: 'Learn Page', icon: '📖' },
         { href: '/supportive-messages', label: 'Supportive Messages', icon: '💬' },
       ],
     },

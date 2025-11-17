@@ -42,6 +42,8 @@ type Blog = {
   tags: string[];
   category?: string | null;
   relatedArticles?: string[];
+  isLearnResource?: boolean;
+  featured?: boolean;
   customContent: string | null;
   regenerationHistory: Array<{
     timestamp: Date;
@@ -75,6 +77,8 @@ export default function BlogDetail({ blog, topics, blogs = [] }: BlogDetailProps
   const [selectedRelatedArticles, setSelectedRelatedArticles] = useState<string[]>(blog.relatedArticles || []);
   const [relatedArticleSearch, setRelatedArticleSearch] = useState('');
   const [showRelatedArticleDropdown, setShowRelatedArticleDropdown] = useState(false);
+  const [isLearnResource, setIsLearnResource] = useState((blog as any).isLearnResource || false);
+  const [featured, setFeatured] = useState((blog as any).featured || false);
   
   // Helper functions
   const handleAddTag = () => {
@@ -190,6 +194,8 @@ export default function BlogDetail({ blog, topics, blogs = [] }: BlogDetailProps
     if (selectedRelatedArticles.length > 0) {
       formData.set('relatedArticles', JSON.stringify(selectedRelatedArticles));
     }
+    formData.set('isLearnResource', isLearnResource ? 'true' : 'false');
+    formData.set('featured', featured ? 'true' : 'false');
     
     startTransition(async () => {
       const result = await updateBlog(blog.id, formData);
@@ -583,6 +589,36 @@ export default function BlogDetail({ blog, topics, blogs = [] }: BlogDetailProps
             defaultValue={blog.estimatedReadTime || blog.readingTime || ''}
             className="input w-full"
           />
+        </div>
+
+        <div>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={featured}
+              onChange={(e) => setFeatured(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm font-medium">Mark as Featured</span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1 ml-6">
+            If checked, this article will be displayed in the "Featured reading" section on the homepage
+          </p>
+        </div>
+
+        <div>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={isLearnResource}
+              onChange={(e) => setIsLearnResource(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm font-medium">Mark as Learn Resource</span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1 ml-6">
+            If checked, this article will be displayed under /learn route in cptsd-main (cptsd.in/learn/{'{slug}'}) instead of blog.cptsd.in/{'{slug}'} and will appear on the Learn page
+          </p>
         </div>
 
         <div>
