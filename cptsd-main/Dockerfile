@@ -51,6 +51,7 @@ RUN adduser --system --uid 1001 nextjs
 # - .next/standalone/ contains server.js and all dependencies
 # - .next/standalone/public/ contains public assets (if public directory exists in source)
 # - .next/static/ contains static assets
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Ensure packages are available at runtime
@@ -60,17 +61,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
 RUN mkdir -p node_modules/@cptsd && \
     ln -sf ../../packages/db node_modules/@cptsd/db && \
     ln -sf ../../packages/pets node_modules/@cptsd/pets
-# Next.js standalone includes public in .next/standalone/public (if source has public/)
-# Move it to root level if it exists in standalone, otherwise create empty directory
-RUN if [ -d "./public" ]; then \
-      echo "Public directory already at root"; \
-    elif [ -d "./.next/standalone/public" ]; then \
-      mv ./.next/standalone/public ./public && \
-      echo "Moved public directory from standalone to root"; \
-    else \
-      mkdir -p ./public && \
-      echo "Created empty public directory"; \
-    fi
 
 USER nextjs
 
