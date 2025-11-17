@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateResource } from '@/app/actions/resources';
 import DeleteButton from './DeleteButton';
-import { ResourceType, ResourceCategory } from '@cptsd/db';
+import { ResourceType, ResourceCategory } from '@cptsd/db/client';
 
 type Resource = {
   id: string;

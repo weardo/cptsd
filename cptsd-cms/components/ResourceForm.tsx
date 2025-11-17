@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createResource, updateResource } from '@/app/actions/resources';
-import { ResourceType, ResourceCategory } from '@cptsd/db';
+import { ResourceType, ResourceCategory } from '@cptsd/db/client';
 
 type ResourceFormProps = {
   initialResource?: {
