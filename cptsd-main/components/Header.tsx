@@ -1,19 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
-import { trackNavigation, trackExternalLink } from '@/lib/analytics';
+import { trackNavigation } from '@/lib/analytics';
 
 export default function Header() {
-  const blogUrl = process.env.NEXT_PUBLIC_BLOG_URL || 'https://blog.cptsd.in';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-xl font-semibold text-gray-900 hover:text-gray-700">
-            CPTSD.in
+          <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-gray-900 hover:text-gray-700">
+            <Image 
+              src="/logo-final.svg" 
+              alt="CPTSD.in" 
+              width={40}
+              height={40}
+              className="h-10 w-10"
+              priority
+            />
+            <span>CPTSD.in</span>
           </Link>
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/" onClick={() => trackNavigation('/', 'Home')} className="text-gray-700 hover:text-gray-900">
@@ -43,13 +51,13 @@ export default function Header() {
             <Link href="/about" onClick={() => trackNavigation('/about', 'About')} className="text-gray-700 hover:text-gray-900">
               About
             </Link>
-            <a 
-              href={blogUrl} 
-              onClick={() => trackExternalLink(blogUrl, 'Blog')}
+            <Link 
+              href="/blog" 
+              onClick={() => trackNavigation('/blog', 'Blog')}
               className="text-gray-700 hover:text-gray-900 font-medium"
             >
               Blog
-            </a>
+            </Link>
           </div>
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -137,13 +145,13 @@ export default function Header() {
               >
                 About
               </Link>
-              <a
-                href={blogUrl}
+              <Link
+                href="/blog"
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Blog
-              </a>
+              </Link>
             </div>
           </div>
         )}

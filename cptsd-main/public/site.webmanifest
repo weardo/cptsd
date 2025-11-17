@@ -1,0 +1,30 @@
+{
+  "name": "CPTSD.in",
+  "short_name": "CPTSD.in",
+  "description": "Complex trauma awareness in the Indian context",
+  "icons": [
+    {
+      "src": "/logo-final.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#5b8a9f",
+  "background_color": "#fafafa",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

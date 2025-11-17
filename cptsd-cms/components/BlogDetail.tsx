@@ -617,7 +617,7 @@ export default function BlogDetail({ blog, topics, blogs = [] }: BlogDetailProps
             <span className="text-sm font-medium">Mark as Learn Resource</span>
           </label>
           <p className="text-xs text-gray-500 mt-1 ml-6">
-            If checked, this article will be displayed under /learn route in cptsd-main (cptsd.in/learn/{'{slug}'}) instead of blog.cptsd.in/{'{slug}'} and will appear on the Learn page
+            If checked, this article will be displayed under /learn route in cptsd-main (cptsd.in/learn/{'{slug}'}) instead of /blog/{'{slug}'} and will appear on the Learn page
           </p>
         </div>
 

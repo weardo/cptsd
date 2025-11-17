@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
-
 export default function StartHerePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

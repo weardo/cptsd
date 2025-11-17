@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { getPublishedBlogs } from '@/lib/dataActions';
 
-const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
-
 // Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +53,7 @@ export default async function LivePage() {
                 {numbArticles.map((article) => (
                   <li key={article.id}>
                     <Link
-                      href={`${BLOG_DOMAIN}/learn/${article.slug}`}
+                      href={`/learn/${article.slug}`}
                       className="text-blue-600 hover:text-blue-700"
                     >
                       {article.title}
@@ -94,7 +92,7 @@ export default async function LivePage() {
                 {peoplePleasingArticles.map((article) => (
                   <li key={article.id}>
                     <Link
-                      href={`${BLOG_DOMAIN}/learn/${article.slug}`}
+                      href={`/learn/${article.slug}`}
                       className="text-blue-600 hover:text-blue-700"
                     >
                       {article.title}
@@ -138,7 +136,7 @@ export default async function LivePage() {
                 {workArticles.map((article) => (
                   <li key={article.id}>
                     <Link
-                      href={`${BLOG_DOMAIN}/learn/${article.slug}`}
+                      href={`/learn/${article.slug}`}
                       className="text-blue-600 hover:text-blue-700"
                     >
                       {article.title}
@@ -176,7 +174,7 @@ export default async function LivePage() {
                 {bodyArticles.map((article) => (
                   <li key={article.id}>
                     <Link
-                      href={`${BLOG_DOMAIN}/learn/${article.slug}`}
+                      href={`/learn/${article.slug}`}
                       className="text-blue-600 hover:text-blue-700"
                     >
                       {article.title}

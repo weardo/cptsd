@@ -6,7 +6,6 @@ set -e
 
 MAIN_DOMAIN="cptsd.in"
 CMS_DOMAIN="cms.cptsd.in"
-BLOG_DOMAIN="blog.cptsd.in"
 JENKINS_DOMAIN="jenkins.cptsd.in"
 STORAGE_DOMAIN="storage.cptsd.in"
 SERVER_IP="37.27.39.20"
@@ -73,24 +72,6 @@ ${CMS_DOMAIN} {
     }
 }
 
-# Blog Public Application
-${BLOG_DOMAIN} {
-    reverse_proxy localhost:3001
-    
-    # Security headers
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        X-XSS-Protection "1; mode=block"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-    
-    # Logging
-    log {
-        output file /var/log/caddy/${BLOG_DOMAIN}.log
-    }
-}
-
 # Jenkins CI/CD
 ${JENKINS_DOMAIN} {
     reverse_proxy localhost:8080
@@ -152,7 +133,6 @@ chmod 755 /var/log/caddy
 # Create log files for all domains to avoid permission issues
 touch /var/log/caddy/${MAIN_DOMAIN}.log
 touch /var/log/caddy/${CMS_DOMAIN}.log
-touch /var/log/caddy/${BLOG_DOMAIN}.log
 touch /var/log/caddy/${JENKINS_DOMAIN}.log
 touch /var/log/caddy/${STORAGE_DOMAIN}.log
 chown caddy:caddy /var/log/caddy/*.log
@@ -179,17 +159,12 @@ echo "      - Type: A"
 echo "      - Name: cms"
 echo "      - Value: $SERVER_IP"
 echo ""
-echo "   3. ${BLOG_DOMAIN}:"
-echo "      - Type: A"
-echo "      - Name: blog"
-echo "      - Value: $SERVER_IP"
-echo ""
-echo "   4. ${JENKINS_DOMAIN}:"
+echo "   3. ${JENKINS_DOMAIN}:"
 echo "      - Type: A"
 echo "      - Name: jenkins"
 echo "      - Value: $SERVER_IP"
 echo ""
-echo "   5. ${STORAGE_DOMAIN}:"
+echo "   4. ${STORAGE_DOMAIN}:"
 echo "      - Type: A"
 echo "      - Name: storage"
 echo "      - Value: $SERVER_IP"
@@ -199,7 +174,6 @@ echo ""
 echo "🧪 Test domains:"
 echo "   - Main: https://${MAIN_DOMAIN}"
 echo "   - CMS: https://${CMS_DOMAIN}"
-echo "   - Blog: https://${BLOG_DOMAIN}"
 echo "   - Jenkins: https://${JENKINS_DOMAIN}"
 echo "   - Storage: https://${STORAGE_DOMAIN}"
 echo ""

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -6,7 +7,16 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">CPTSD.in</h3>
+            <Link href="/" className="flex items-center gap-2 mb-4">
+              <Image 
+                src="/logo-final.svg" 
+                alt="CPTSD.in" 
+                width={40}
+                height={40}
+                className="h-10 w-10"
+              />
+              <h3 className="font-semibold text-gray-900">CPTSD.in</h3>
+            </Link>
             <p className="text-sm text-gray-600">
               An awareness and education project about Complex PTSD in the Indian context.
               This is not a medical or emergency service.

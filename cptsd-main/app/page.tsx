@@ -3,7 +3,7 @@ import { getPublishedBlogs, getApprovedStories } from '@/lib/dataActions';
 import { getFeaturedContent } from '@/lib/getFeaturedContent';
 import FeaturedCard from './featured/featured-card';
 
-const BLOG_DOMAIN = process.env.NEXT_PUBLIC_BLOG_DOMAIN || 'https://blog.cptsd.in';
+// Blog is now integrated at /blog
 
 // Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
@@ -176,7 +176,7 @@ export default async function HomePage() {
             {latestBlogs.slice(0, 4).map((blog) => {
               const blogUrl = blog.isLearnResource 
                 ? `/learn/${blog.slug}` 
-                : `${BLOG_DOMAIN}/${blog.slug}`;
+                : `/blog/${blog.slug}`;
               return (
               <Link
                 key={blog.id}

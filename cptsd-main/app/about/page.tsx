@@ -1,9 +1,19 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">About CPTSD.in</h1>
+      <div className="flex items-center gap-3 mb-8">
+        <Image 
+          src="/logo-final.svg" 
+          alt="CPTSD.in" 
+          width={48}
+          height={48}
+          className="h-12 w-12"
+        />
+        <h1 className="text-4xl font-bold text-gray-900">About CPTSD.in</h1>
+      </div>
 
       <div className="prose prose-lg max-w-none">
         {/* Who we are */}
@@ -21,7 +31,7 @@ export default function AboutPage() {
           <p className="text-gray-700 text-lg leading-relaxed mb-4">We work to:</p>
           <ul className="list-disc pl-6 space-y-2 text-gray-700 text-lg">
             <li>Curate Indian and international resources about CPTSD</li>
-            <li>Publish psychoeducational articles (via blog.cptsd.in)</li>
+            <li>Publish psychoeducational articles (via our blog)</li>
             <li>Host anonymised community stories</li>
             <li>Highlight support pathways (helplines, directories, NGOs)</li>
           </ul>

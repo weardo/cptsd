@@ -162,3 +162,45 @@ export function trackButtonClick(buttonName: string, location?: string): void {
 	});
 }
 
+/**
+ * Track article view
+ */
+export function trackArticleView(slug: string, title: string, topic?: string): void {
+	trackEvent('article_view', {
+		article_slug: slug,
+		article_title: title,
+		topic: topic,
+	});
+}
+
+/**
+ * Track article click (from list/home)
+ */
+export function trackArticleClick(slug: string, title: string, source?: string): void {
+	trackEvent('article_click', {
+		article_slug: slug,
+		article_title: title,
+		source: source || 'unknown',
+	});
+}
+
+/**
+ * Track topic filter
+ */
+export function trackTopicFilter(topicId: string, topicName: string): void {
+	trackEvent('topic_filter', {
+		topic_id: topicId,
+		topic_name: topicName,
+	});
+}
+
+/**
+ * Track pagination
+ */
+export function trackPagination(page: number, source?: string): void {
+	trackEvent('pagination', {
+		page: page,
+		source: source || 'blog',
+	});
+}
+
