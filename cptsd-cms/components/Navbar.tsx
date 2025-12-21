@@ -93,6 +93,13 @@ export default function Navbar() {
                         Resources
                       </Link>
                       <Link
+                        href="/mental-health-professionals"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        onClick={() => setContentMenuOpen(false)}
+                      >
+                        Mental Health Professionals
+                      </Link>
+                      <Link
                         href="/studio/featured"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                         onClick={() => setContentMenuOpen(false)}

@@ -165,3 +165,50 @@ export async function uploadGalleryImage(formData: FormData) {
   }
 }
 
+export async function uploadProfilePicture(formData: FormData) {
+  try {
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return {
+        success: false,
+        error: 'No file provided',
+      };
+    }
+    
+    // Validate file size (max 5MB for profile pictures)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      return {
+        success: false,
+        error: 'File size exceeds 5MB limit',
+      };
+    }
+    
+    // Validate file type (images only)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: 'Invalid file type. Only images are allowed.',
+      };
+    }
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    const url = await uploadToS3(buffer, file.name, 'profile-pictures');
+    
+    return {
+      success: true,
+      url,
+    };
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to upload profile picture',
+    };
+  }
+}
+

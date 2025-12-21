@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "lib": ["ES2020"],
+    "types": ["node"],
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@cptsd/db": ["./node_modules/@cptsd/db/src/index"],
+      "@cptsd/db/*": ["./node_modules/@cptsd/db/src/*"],
+      "@cptsd/ai": ["./node_modules/@cptsd/ai/src/index"],
+      "@cptsd/ai/*": ["./node_modules/@cptsd/ai/src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
+}

@@ -4,6 +4,9 @@
 // Resource types (safe for client)
 export { ResourceType, ResourceCategory } from './types/Resource';
 
+// Mental Health Professional types (safe for client)
+export { ProfessionalType, Designation, ModeOfDelivery, Specialization } from './models/MentalHealthProfessional';
+
 // Add other client-safe enums/types here as needed
 // Note: Only export pure TypeScript types/enums, no Mongoose models
 

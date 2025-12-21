@@ -1,0 +1,33 @@
+{
+  "name": "cptsd-journal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "if [ -d \"../../packages/db\" ]; then mkdir -p node_modules/@cptsd && rm -rf node_modules/@cptsd/db && cp -r ../../packages/db node_modules/@cptsd/db; fi && if [ -d \"../../packages/ai\" ]; then rm -rf node_modules/@cptsd/ai && cp -r ../../packages/ai node_modules/@cptsd/ai; fi",
+    "dev": "next dev -p 3003",
+    "build": "next build",
+    "start": "next start -p 3003",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "mongoose": "^8.19.4",
+    "next": "^16.0.3",
+    "next-auth": "^4.24.13",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

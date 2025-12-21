@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # Journal Next.js Application
+  app:
+    build:
+      context: ../.. # Build from repo root to include packages
+      dockerfile: apps/cptsd-journal/Dockerfile
+      args:
+        OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+        MONGODB_URI: ${MONGODB_URI:-}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
+        ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+        ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    restart: always
+    ports:
+      - '3003:3003'
+    environment:
+      # Database - Connect to shared MongoDB
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-journal?authSource=admin}
+
+      # NextAuth
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3003}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+
+      # Authentication
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      # OpenAI Configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3003/api/auth/signin',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Worker service for background jobs
+  worker:
+    build:
+      context: ../.. # Build from repo root
+      dockerfile: services/worker/Dockerfile
+      args:
+        OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+        MONGODB_URI: ${MONGODB_URI:-}
+    restart: always
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-journal?authSource=admin}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # MongoDB - Shared with other apps (reference existing service)
+  mongodb:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - '127.0.0.1:27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+      MONGO_INITDB_DATABASE: cptsd-journal
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test:
+        ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping").ok', '--quiet']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+
+

@@ -57,3 +57,49 @@ export { default as Blog } from './models/Article';
 export { ArticleStatus as BlogStatus } from './models/Article';
 export type { IArticle as IBlog, IArticleImage as IBlogImage } from './models/Article';
 
+// Journal-specific models (used by cptsd-journal app)
+export { default as JournalConversation } from './models/JournalConversation';
+export type { IJournalConversation } from './models/JournalConversation';
+
+export { default as JournalMessage, MessageRole } from './models/JournalMessage';
+export type {
+  IJournalMessage,
+  IJournalMessageMetadata,
+} from './models/JournalMessage';
+
+export { default as JournalEntry, EntrySource } from './models/JournalEntry';
+export type { IJournalEntry } from './models/JournalEntry';
+
+export { default as EntryAnalysis, RiskLevel } from './models/EntryAnalysis';
+export type {
+  IEntryAnalysis,
+  IEmotion,
+  ITheme,
+  IStressor,
+  ICoping,
+  IRisk,
+  IAnalysisAI,
+} from './models/EntryAnalysis';
+
+export { default as WeeklyInsight } from './models/WeeklyInsight';
+export type {
+  IWeeklyInsight,
+  ITrend,
+  ITopItem,
+  IWeeklyInsightAI,
+} from './models/WeeklyInsight';
+
+export {
+  default as SafetyEvent,
+  SafetyLevel,
+  SafetyAction,
+} from './models/SafetyEvent';
+export type { ISafetyEvent } from './models/SafetyEvent';
+
+export { default as Job, JobType, JobStatus } from './models/Job';
+export type { IJob } from './models/Job';
+
+export { default as MentalHealthProfessional } from './models/MentalHealthProfessional';
+export { ProfessionalType, Designation, ModeOfDelivery, Specialization } from './models/MentalHealthProfessional';
+export type { IMentalHealthProfessional, ILocation, IContactInfo, IQualification } from './models/MentalHealthProfessional';
+

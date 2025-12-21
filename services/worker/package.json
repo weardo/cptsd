@@ -1,0 +1,21 @@
+{
+  "name": "cptsd-worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "if [ -d \"../../packages/db\" ]; then mkdir -p node_modules/@cptsd && rm -rf node_modules/@cptsd/db && cp -r ../../packages/db node_modules/@cptsd/db; fi && if [ -d \"../../packages/ai\" ]; then rm -rf node_modules/@cptsd/ai && cp -r ../../packages/ai node_modules/@cptsd/ai; fi",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mongoose": "^8.19.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
