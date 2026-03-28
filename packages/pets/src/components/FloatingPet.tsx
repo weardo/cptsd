@@ -18,19 +18,22 @@ interface FloatingPetProps {
 
 type ClickAnimation = 'shake' | 'flip' | 'fly-away' | 'bounce' | 'spin' | 'heart' | null;
 
+// Minimum Y offset to keep pets below the sticky header + crisis banner
+const MIN_PET_Y = 120;
+
 // Helper function to get random position within viewport
 function getRandomPosition(petElement: HTMLElement | null): { x: number; y: number } {
   if (!petElement) {
-    return { x: 0, y: 0 };
+    return { x: 0, y: MIN_PET_Y };
   }
-  
+
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
   const petWidth = petElement.offsetWidth || 60;
   const petHeight = petElement.offsetHeight || 60;
 
   const randomX = Math.random() * (viewportWidth - petWidth);
-  const randomY = Math.random() * (viewportHeight - petHeight);
+  const randomY = MIN_PET_Y + Math.random() * (viewportHeight - petHeight - MIN_PET_Y);
 
   return { x: randomX, y: randomY };
 }
@@ -240,7 +243,7 @@ export default function FloatingPet({
       // Ensure within viewport
       waypoints.push({
         x: Math.max(0, Math.min(viewportWidth - petWidth, stepX)),
-        y: Math.max(0, Math.min(viewportHeight - petHeight, stepY)),
+        y: Math.max(MIN_PET_Y, Math.min(viewportHeight - petHeight, stepY)),
       });
     }
     
@@ -293,7 +296,7 @@ export default function FloatingPet({
             const angle = Math.random() * Math.PI * 2;
             destination = {
               x: Math.max(0, Math.min(viewportWidth - petWidth, currentPos.x + Math.cos(angle) * wanderDistance)),
-              y: Math.max(0, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
+              y: Math.max(MIN_PET_Y, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
             };
           } else if (movementType < 0.95) {
             // 15% chance: Medium distance movement (3-5 pet lengths)
@@ -302,7 +305,7 @@ export default function FloatingPet({
             const angle = Math.random() * Math.PI * 2;
             destination = {
               x: Math.max(0, Math.min(viewportWidth - petWidth, currentPos.x + Math.cos(angle) * wanderDistance)),
-              y: Math.max(0, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
+              y: Math.max(MIN_PET_Y, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
             };
           } else {
             // 5% chance: Longer movement (rare exploration, but still reasonable)
@@ -311,7 +314,7 @@ export default function FloatingPet({
             const angle = Math.random() * Math.PI * 2;
             destination = {
               x: Math.max(0, Math.min(viewportWidth - petWidth, currentPos.x + Math.cos(angle) * wanderDistance)),
-              y: Math.max(0, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
+              y: Math.max(MIN_PET_Y, Math.min(viewportHeight - petHeight, currentPos.y + Math.sin(angle) * wanderDistance)),
             };
           }
           
@@ -392,7 +395,7 @@ export default function FloatingPet({
         break;
       case 1: // Right edge
         startX = viewportWidth;
-        startY = Math.random() * (viewportHeight - petHeight);
+        startY = MIN_PET_Y + Math.random() * (viewportHeight - petHeight - MIN_PET_Y);
         break;
       case 2: // Bottom edge
         startX = Math.random() * (viewportWidth - petWidth);
@@ -400,7 +403,7 @@ export default function FloatingPet({
         break;
       case 3: // Left edge
         startX = -petWidth;
-        startY = Math.random() * (viewportHeight - petHeight);
+        startY = MIN_PET_Y + Math.random() * (viewportHeight - petHeight - MIN_PET_Y);
         break;
     }
 
