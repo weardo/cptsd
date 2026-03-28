@@ -11,9 +11,11 @@ services:
     restart: always
     ports:
       - '3002:3002'
+    env_file:
+      - /opt/cptsd-main/.env
     environment:
       # Database - Connect to shared MongoDB from cptsd-cms
-      # Set MONGODB_URI in .env file, or it will use defaults below
+      # Credentials loaded from /opt/cptsd-main/.env on the host
       # Format: mongodb://username:password@mongodb:27017/cptsd-cms?authSource=admin
       MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
     # MongoDB is provided by cptsd-cms deployment
