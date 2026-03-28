@@ -15,6 +15,7 @@ services:
       - /usr/bin/docker:/usr/bin/docker
       - /opt/cptsd-cms:/opt/cptsd-cms:rw  # Read-write access for deployments
       - /opt/cptsd-blog-public:/opt/cptsd-blog-public:rw  # Read-write access for deployments
+      - /opt/cptsd-main:/opt/cptsd-main:rw  # Read-write access for deployments
     environment:
       - JENKINS_OPTS=--httpPort=8080
     networks:

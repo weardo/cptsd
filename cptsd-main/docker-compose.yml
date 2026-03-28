@@ -18,6 +18,11 @@ services:
       MONGODB_URI: ${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
     # MongoDB is provided by cptsd-cms deployment
     # Connect to existing MongoDB service on shared network
+    # Prevent malware from writing to the filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
     healthcheck:
       test:
         [
