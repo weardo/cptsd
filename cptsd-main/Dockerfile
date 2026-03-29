@@ -21,7 +21,9 @@ COPY cptsd-main/ .
 COPY packages/db ./packages/db
 COPY packages/pets ./packages/pets
 # Create symlinks in node_modules for @cptsd packages
+# (postinstall copies them as real dirs; remove before symlinking)
 RUN mkdir -p node_modules/@cptsd && \
+    rm -rf node_modules/@cptsd/db node_modules/@cptsd/pets && \
     ln -sf ../../packages/db node_modules/@cptsd/db && \
     ln -sf ../../packages/pets node_modules/@cptsd/pets
 
