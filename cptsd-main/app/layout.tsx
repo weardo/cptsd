@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
+import { Noto_Serif, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CrisisBanner from '@/components/CrisisBanner';
 import { FloatingPetsContainer } from '@cptsd/pets';
 import { Analytics } from '@/components/Analytics';
+
+const notoSerif = Noto_Serif({
+  subsets: ['latin'],
+  variable: '--font-noto-serif',
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-plus-jakarta-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cptsd.in'),
@@ -36,7 +49,7 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
-  themeColor: '#5b8a9f',
+  themeColor: '#630ed4',
   openGraph: {
     type: 'website',
     locale: 'en_IN',
@@ -74,7 +87,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${notoSerif.variable} ${plusJakartaSans.variable}`}>
       <head>
         <link rel="icon" type="image/svg+xml" href="/logo-final.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -82,7 +95,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
-      <body>
+      <body className="bg-surface text-on-surface">
         <FloatingPetsContainer initialCount={4} />
         <CrisisBanner />
         <Header />

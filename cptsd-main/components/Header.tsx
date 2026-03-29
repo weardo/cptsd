@@ -9,55 +9,55 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-[70]">
+    <header className="glass sticky top-0 z-[70]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-gray-900 hover:text-gray-700">
-            <Image 
-              src="/logo-final.svg" 
-              alt="CPTSD.in" 
+          <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-on-surface hover:text-primary no-underline">
+            <Image
+              src="/logo-final.svg"
+              alt="CPTSD.in"
               width={40}
               height={40}
               className="h-10 w-10"
               priority
             />
-            <span>CPTSD.in</span>
+            <span className="font-serif">CPTSD.in</span>
           </Link>
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/" onClick={() => trackNavigation('/', 'Home')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/" onClick={() => trackNavigation('/', 'Home')} className="text-on-surface-variant hover:text-primary no-underline">
               Home
             </Link>
-            <Link href="/start-here" onClick={() => trackNavigation('/start-here', 'Start Here')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/start-here" onClick={() => trackNavigation('/start-here', 'Start Here')} className="text-on-surface-variant hover:text-primary no-underline">
               Start Here
             </Link>
-            <Link href="/learn" onClick={() => trackNavigation('/learn', 'Learn')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/learn" onClick={() => trackNavigation('/learn', 'Learn')} className="text-on-surface-variant hover:text-primary no-underline">
               Learn
             </Link>
-            <Link href="/live" onClick={() => trackNavigation('/live', 'Live')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/live" onClick={() => trackNavigation('/live', 'Live')} className="text-on-surface-variant hover:text-primary no-underline">
               Live
             </Link>
-            <Link href="/resources" onClick={() => trackNavigation('/resources', 'Resources')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/resources" onClick={() => trackNavigation('/resources', 'Resources')} className="text-on-surface-variant hover:text-primary no-underline">
               Resources
             </Link>
-            <Link href="/mental-health-professionals" onClick={() => trackNavigation('/mental-health-professionals', 'Mental Health Professionals')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/mental-health-professionals" onClick={() => trackNavigation('/mental-health-professionals', 'Mental Health Professionals')} className="text-on-surface-variant hover:text-primary no-underline">
               Find Help
             </Link>
-            <Link href="/support" onClick={() => trackNavigation('/support', 'Support')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/support" onClick={() => trackNavigation('/support', 'Support')} className="text-on-surface-variant hover:text-primary no-underline">
               Support
             </Link>
-            <Link href="/community" onClick={() => trackNavigation('/community', 'Community')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/community" onClick={() => trackNavigation('/community', 'Community')} className="text-on-surface-variant hover:text-primary no-underline">
               Community
             </Link>
-            <Link href="/featured" onClick={() => trackNavigation('/featured', 'Featured')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/featured" onClick={() => trackNavigation('/featured', 'Featured')} className="text-on-surface-variant hover:text-primary no-underline">
               Featured
             </Link>
-            <Link href="/about" onClick={() => trackNavigation('/about', 'About')} className="text-gray-700 hover:text-gray-900">
+            <Link href="/about" onClick={() => trackNavigation('/about', 'About')} className="text-on-surface-variant hover:text-primary no-underline">
               About
             </Link>
-            <Link 
-              href="/blog" 
+            <Link
+              href="/blog"
               onClick={() => trackNavigation('/blog', 'Blog')}
-              className="text-gray-700 hover:text-gray-900 font-medium"
+              className="text-on-surface-variant hover:text-primary no-underline font-medium"
             >
               Blog
             </Link>
@@ -66,7 +66,7 @@ export default function Header() {
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-gray-900 focus:outline-none focus:text-gray-900 p-2"
+              className="text-on-surface-variant hover:text-primary focus:outline-none p-2"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -81,83 +81,83 @@ export default function Header() {
             </button>
           </div>
         </div>
-        {/* Mobile menu */}
+        {/* Mobile menu — background shift instead of border (No-Line Rule) */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200">
+          <div className="md:hidden bg-surface-container-low rounded-b-xl">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link
                 href="/"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link
                 href="/start-here"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Start Here
               </Link>
               <Link
                 href="/learn"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Learn
               </Link>
               <Link
                 href="/live"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Live
               </Link>
               <Link
                 href="/resources"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Resources
               </Link>
               <Link
                 href="/mental-health-professionals"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Find Help
               </Link>
               <Link
                 href="/support"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Support
               </Link>
               <Link
                 href="/community"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Community
               </Link>
               <Link
                 href="/featured"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Featured
               </Link>
               <Link
                 href="/about"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
               </Link>
               <Link
                 href="/blog"
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Blog

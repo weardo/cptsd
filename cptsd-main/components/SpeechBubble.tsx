@@ -21,8 +21,8 @@ export default function SpeechBubble({ message, position = 'bottom' }: SpeechBub
         minWidth: '120px',
       }}
     >
-      <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-lg border-2 border-soft-lavender">
-        <p className="text-sm text-gray-700 font-medium leading-relaxed">{message}</p>
+      <div className="glass rounded-2xl px-4 py-2 border-2 border-outline-variant/30" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+        <p className="text-sm text-on-surface font-medium leading-relaxed">{message}</p>
       </div>
       {/* Arrow */}
       <div

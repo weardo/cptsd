@@ -16,8 +16,8 @@ export default async function FeaturedPage() {
 	return (
 		<main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 space-y-10">
 			<section className="max-w-3xl">
-				<h1 className="text-4xl font-bold text-gray-900">Featured & highlights</h1>
-				<p className="mt-4 text-gray-700">
+				<h1 className="text-4xl font-bold text-on-surface">Featured & highlights</h1>
+				<p className="mt-4 text-on-surface-variant">
 					Curated links, art, articles, tools and resources from the community and beyond.
 					These are starting points to explore — not medical advice or endorsements.
 				</p>
@@ -28,5 +28,3 @@ export default async function FeaturedPage() {
 		</main>
 	);
 }
-
-

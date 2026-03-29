@@ -1,11 +1,9 @@
 import Link from 'next/link';
 import { getPublishedBlogs } from '@/lib/dataActions';
 
-// Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
 
 export default async function LivePage() {
-  // Fetch articles for relevant sections
   const numbArticles = await getPublishedBlogs({ limit: 3, tags: ['numbness', 'sensitivity', 'emotional-regulation'] });
   const peoplePleasingArticles = await getPublishedBlogs({ limit: 3, tags: ['boundaries', 'people-pleasing', 'self-care'] });
   const workArticles = await getPublishedBlogs({ limit: 3, tags: ['work', 'burnout', 'studies', 'productivity'] });
@@ -13,49 +11,45 @@ export default async function LivePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Living with CPTSD</h1>
-      <p className="text-xl text-gray-700 mb-12">
+      <h1 className="text-4xl font-bold text-on-surface mb-4">Living with CPTSD</h1>
+      <p className="text-xl text-on-surface mb-12">
         This page is for <strong>day-to-day life with CPTSD traits</strong>. These sections offer
         practical insights and small practices that may help.
       </p>
 
       <div className="space-y-16">
-        {/* Section 1: Feeling numb or "too sensitive" */}
-        <section className="bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <section className="bg-surface-container-lowest rounded-xl p-8" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <h2 className="text-2xl font-bold text-on-surface mb-4">
             Feeling numb or "too sensitive"
           </h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Emotional numbing and overwhelm are both valid survival responses. When your nervous
             system has adapted to long-term stress, you might swing between feeling too much and
             feeling nothing at all.
           </p>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Here are some very small, low-demand practices you can try:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-4">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface mb-4">
             <li>Noticing your feet on the floor</li>
             <li>Naming 3 things you can see around you</li>
             <li>Gentle stretching or movement</li>
             <li>Taking slow, deep breaths</li>
             <li>Holding something warm or cold in your hands</li>
           </ul>
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-            <p className="text-gray-700">
+          <div className="bg-surface-container-low border-l-4 border-primary-container p-4 rounded-xl">
+            <p className="text-on-surface">
               <strong>Important:</strong> Pause if anything feels too much. These practices are
               suggestions, not requirements. Be gentle with yourself.
             </p>
           </div>
           {numbArticles.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Articles</h3>
-              <ul className="space-y-2">
+              <h3 className="text-lg font-semibold text-on-surface mb-3">Related Articles</h3>
+              <ul className="space-y-6">
                 {numbArticles.map((article) => (
                   <li key={article.id}>
-                    <Link
-                      href={`/learn/${article.slug}`}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
+                    <Link href={`/learn/${article.slug}`} className="text-primary">
                       {article.title}
                     </Link>
                   </li>
@@ -65,20 +59,19 @@ export default async function LivePage() {
           )}
         </section>
 
-        {/* Section 2: People-pleasing and fawning */}
-        <section className="bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <section className="bg-surface-container-lowest rounded-xl p-8" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <h2 className="text-2xl font-bold text-on-surface mb-4">
             People-pleasing and fawning
           </h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Always saying "yes", over-apologising, or trying to keep everyone happy can be a trauma
             response. In Indian contexts, this might show up as being "accommodating", "sanskaari",
             or the "good child" who never causes trouble.
           </p>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Small steps toward boundaries:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-4">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface mb-4">
             <li>Delaying your answer: "I'll think about it and get back to you"</li>
             <li>Practising saying "no" to small, low-stakes requests</li>
             <li>Noticing when you're saying "yes" from fear rather than genuine desire</li>
@@ -87,14 +80,11 @@ export default async function LivePage() {
           </ul>
           {peoplePleasingArticles.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Articles</h3>
-              <ul className="space-y-2">
+              <h3 className="text-lg font-semibold text-on-surface mb-3">Related Articles</h3>
+              <ul className="space-y-6">
                 {peoplePleasingArticles.map((article) => (
                   <li key={article.id}>
-                    <Link
-                      href={`/learn/${article.slug}`}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
+                    <Link href={`/learn/${article.slug}`} className="text-primary">
                       {article.title}
                     </Link>
                   </li>
@@ -104,15 +94,14 @@ export default async function LivePage() {
           )}
         </section>
 
-        {/* Section 3: Work, studies and burnout */}
-        <section className="bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <section className="bg-surface-container-lowest rounded-xl p-8" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <h2 className="text-2xl font-bold text-on-surface mb-4">
             Work, studies and burnout
           </h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Common patterns include:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-4">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface mb-4">
             <li>
               <strong>Overworking + perfectionism:</strong> pushing yourself until you collapse,
               feeling like nothing is ever good enough
@@ -122,8 +111,8 @@ export default async function LivePage() {
               start, then shaming yourself for not being productive
             </li>
           </ul>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">Small reframes:</p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-4">
+          <p className="text-on-surface text-lg leading-relaxed mb-4">Small reframes:</p>
+          <ul className="list-disc pl-6 space-y-2 text-on-surface mb-4">
             <li>Breaking tasks into smaller steps (even "open the document" can be a step)</li>
             <li>Setting realistic "good enough" goals instead of perfect ones</li>
             <li>Prioritising rest as a form of recovery, not laziness</li>
@@ -131,14 +120,11 @@ export default async function LivePage() {
           </ul>
           {workArticles.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Articles</h3>
-              <ul className="space-y-2">
+              <h3 className="text-lg font-semibold text-on-surface mb-3">Related Articles</h3>
+              <ul className="space-y-6">
                 {workArticles.map((article) => (
                   <li key={article.id}>
-                    <Link
-                      href={`/learn/${article.slug}`}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
+                    <Link href={`/learn/${article.slug}`} className="text-primary">
                       {article.title}
                     </Link>
                   </li>
@@ -148,20 +134,19 @@ export default async function LivePage() {
           )}
         </section>
 
-        {/* Section 4: Body and health */}
-        <section className="bg-white rounded-lg border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Body and health</h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+        <section className="bg-surface-container-lowest rounded-xl p-8" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Body and health</h2>
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             Trauma can show up in the body. Common experiences include:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-4">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface mb-4">
             <li>Sleep issues (insomnia, nightmares, restless sleep)</li>
             <li>Digestion issues</li>
             <li>Chronic pain or tension</li>
             <li>Fatigue that doesn't improve with rest</li>
           </ul>
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded mb-4">
-            <p className="text-gray-700">
+          <div className="bg-surface-container-high border-l-4 border-primary-container p-4 rounded-xl mb-4">
+            <p className="text-on-surface">
               <strong>Important:</strong> Please seek medical evaluation for physical symptoms. Do
               NOT dismiss physical symptoms as "just trauma". Mental and physical health are
               connected, and both deserve proper care.
@@ -169,14 +154,11 @@ export default async function LivePage() {
           </div>
           {bodyArticles.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Articles</h3>
-              <ul className="space-y-2">
+              <h3 className="text-lg font-semibold text-on-surface mb-3">Related Articles</h3>
+              <ul className="space-y-6">
                 {bodyArticles.map((article) => (
                   <li key={article.id}>
-                    <Link
-                      href={`/learn/${article.slug}`}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
+                    <Link href={`/learn/${article.slug}`} className="text-primary">
                       {article.title}
                     </Link>
                   </li>

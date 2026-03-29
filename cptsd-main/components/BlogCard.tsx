@@ -31,10 +31,10 @@ export default function BlogCard({
 	};
 
 	return (
-		<article className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+		<article className="bg-surface-container-lowest rounded-xl overflow-hidden hover:bg-surface-variant transition-colors duration-300 group" style={{ boxShadow: 'var(--shadow-ambient)' }}>
 			{featuredImage && (
-				<Link href={`/blog/${slug}`} onClick={handleClick} className="block">
-					<div className="aspect-video overflow-hidden bg-gradient-to-br from-[#9fb3a7]/20 to-[#c9a788]/20">
+				<Link href={`/blog/${slug}`} onClick={handleClick} className="block no-underline">
+					<div className="aspect-video overflow-hidden bg-surface-container-low">
 						<img
 							src={featuredImage}
 							alt={title}
@@ -45,11 +45,11 @@ export default function BlogCard({
 				</Link>
 			)}
 			<div className="p-6">
-				<div className="flex items-center gap-3 text-sm text-gray-600 mb-4 flex-wrap">
+				<div className="flex items-center gap-3 text-sm text-on-surface-variant mb-6 flex-wrap">
 					{topic && (
 						<Link
 							href={`/blog?topic=${topic.id}`}
-							className="px-3 py-1 bg-[var(--sage-green)]/20 text-[#5b8a9f] rounded-full font-medium hover:bg-[var(--sage-green)]/30 transition-colors text-xs"
+							className="px-3 py-1 bg-surface-container-low text-primary rounded-full font-medium hover:bg-surface-variant transition-colors text-xs no-underline"
 						>
 							{topic.name}
 						</Link>
@@ -65,17 +65,17 @@ export default function BlogCard({
 					)}
 					{readingTime && <span className="text-xs">• {readingTime} min read</span>}
 				</div>
-				<Link href={`/blog/${slug}`} onClick={handleClick} className="block group/link">
-					<h2 className="text-xl font-bold text-gray-900 mb-3 group-hover/link:text-[#5b8a9f] transition-colors leading-tight line-clamp-2">
+				<Link href={`/blog/${slug}`} onClick={handleClick} className="block group/link no-underline">
+					<h2 className="text-xl font-bold text-on-surface mb-3 group-hover/link:text-primary transition-colors leading-tight line-clamp-2">
 						{title}
 					</h2>
 					{excerpt && (
-						<p className="text-gray-600 mb-4 leading-relaxed line-clamp-3 text-sm">
+						<p className="text-on-surface-variant mb-6 leading-relaxed line-clamp-3 text-sm">
 							{excerpt}
 						</p>
 					)}
-					<div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-						<span className="text-[#5b8a9f] font-semibold text-sm group-hover/link:underline">
+					<div className="flex items-center justify-between mt-4 pt-4">
+						<span className="text-primary font-semibold text-sm group-hover/link:underline">
 							Read more →
 						</span>
 						{tags && tags.length > 0 && (
@@ -83,7 +83,7 @@ export default function BlogCard({
 								{tags.slice(0, 2).map((tag: string, idx: number) => (
 									<span
 										key={idx}
-										className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded border border-gray-200"
+										className="px-2 py-1 text-xs bg-surface-container-low text-on-surface-variant rounded-lg"
 									>
 										#{tag}
 									</span>
@@ -96,4 +96,3 @@ export default function BlogCard({
 		</article>
 	);
 }
-

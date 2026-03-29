@@ -54,19 +54,12 @@ export default function MentalHealthProfessionalsBrowser({
 		const q = normalize(query.trim());
 		const includes = TYPE_TABS.find((t) => t.key === selectedTab)?.includes ?? [];
 		return initialProfessionals.filter((p) => {
-			// type gate
 			if (includes.length > 0 && !includes.includes(p.type)) return false;
-			// designation gate
 			if (selectedDesignation && p.designation !== selectedDesignation) return false;
-			// city gate
 			if (selectedCity && p.location?.city !== selectedCity) return false;
-			// state gate
 			if (selectedState && p.location?.state !== selectedState) return false;
-			// mode gate
 			if (selectedMode && p.modeOfDelivery !== selectedMode) return false;
-			// specialization gate
 			if (selectedSpecialization && !p.specializations.includes(selectedSpecialization as any)) return false;
-			// text gate
 			if (q.length > 0) {
 				const hay =
 					(p.name || '') +
@@ -97,7 +90,6 @@ export default function MentalHealthProfessionalsBrowser({
 		selectedSpecialization,
 	]);
 
-	// Track search queries (debounced)
 	useEffect(() => {
 		if (query.trim().length > 2) {
 			const timer = setTimeout(() => {
@@ -107,7 +99,6 @@ export default function MentalHealthProfessionalsBrowser({
 		}
 	}, [query, filtered.length]);
 
-	// Track filter changes
 	useEffect(() => {
 		if (selectedTab !== 'ALL') {
 			trackFilter('type_tab', selectedTab);
@@ -117,10 +108,12 @@ export default function MentalHealthProfessionalsBrowser({
 	const noData = initialProfessionals.length === 0;
 	const noMatches = !noData && filtered.length === 0;
 
+	const selectClass = "rounded-lg bg-surface-container-low px-3 py-2 text-sm text-on-surface outline outline-1 outline-outline-variant/15 focus:outline-2 focus:outline-primary";
+
 	return (
 		<div className="space-y-8">
 			{/* Filter Bar */}
-			<div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+			<div className="bg-surface-container-lowest rounded-xl p-4" style={{ boxShadow: 'var(--shadow-ambient)' }}>
 				<div className="flex flex-col md:flex-row md:items-center gap-3">
 					<div className="flex-1">
 						<label htmlFor="q" className="sr-only">
@@ -132,7 +125,7 @@ export default function MentalHealthProfessionalsBrowser({
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Search by name, specialization, city, language..."
-							className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							className="w-full rounded-lg bg-surface-container-low px-3 py-2 text-sm text-on-surface outline outline-1 outline-outline-variant/15 focus:outline-2 focus:outline-primary placeholder:text-on-surface-variant/50"
 						/>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -141,10 +134,10 @@ export default function MentalHealthProfessionalsBrowser({
 								key={t.key}
 								type="button"
 								onClick={() => setSelectedTab(t.key)}
-								className={`px-3 py-1.5 rounded-full text-sm border ${
+								className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
 									selectedTab === t.key
-										? 'bg-blue-600 text-white border-blue-600'
-										: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+										? 'bg-primary text-white'
+										: 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
 								}`}
 								aria-pressed={selectedTab === t.key}
 							>
@@ -154,38 +147,33 @@ export default function MentalHealthProfessionalsBrowser({
 					</div>
 				</div>
 
-				{/* Additional Filters */}
 				<div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
 					<select
 						value={selectedCity || ''}
 						onChange={(e) => setSelectedCity(e.target.value || null)}
-						className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className={selectClass}
 					>
 						<option value="">All Cities</option>
 						{allCities.map((city) => (
-							<option key={city} value={city}>
-								{city}
-							</option>
+							<option key={city} value={city}>{city}</option>
 						))}
 					</select>
 
 					<select
 						value={selectedState || ''}
 						onChange={(e) => setSelectedState(e.target.value || null)}
-						className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className={selectClass}
 					>
 						<option value="">All States</option>
 						{allStates.map((state) => (
-							<option key={state} value={state}>
-								{state}
-							</option>
+							<option key={state} value={state}>{state}</option>
 						))}
 					</select>
 
 					<select
 						value={selectedMode || ''}
 						onChange={(e) => setSelectedMode(e.target.value || null)}
-						className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className={selectClass}
 					>
 						<option value="">All Modes</option>
 						{Object.values(ModeOfDelivery).map((mode) => (
@@ -198,7 +186,7 @@ export default function MentalHealthProfessionalsBrowser({
 					<select
 						value={selectedSpecialization || ''}
 						onChange={(e) => setSelectedSpecialization(e.target.value || null)}
-						className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className={selectClass}
 					>
 						<option value="">All Specializations</option>
 						{allSpecializations.map((spec) => (
@@ -210,24 +198,22 @@ export default function MentalHealthProfessionalsBrowser({
 				</div>
 			</div>
 
-			{/* Empty states */}
 			{noData && (
-				<div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-					<p className="text-gray-700">
+				<div className="bg-surface-container-low rounded-xl p-6">
+					<p className="text-on-surface">
 						We are still building this directory. In the meantime, you can search for mental health
 						professionals online, and always verify that the source is reputable and current.
 					</p>
 				</div>
 			)}
 			{noMatches && (
-				<div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-					<p className="text-gray-700">
+				<div className="bg-surface-container-low rounded-xl p-6">
+					<p className="text-on-surface">
 						No professionals matched your filters. Try clearing filters or changing your search terms.
 					</p>
 				</div>
 			)}
 
-			{/* Professionals Grid */}
 			{!noData && !noMatches && (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 					{filtered.map((p) => (
@@ -243,7 +229,8 @@ function ProfessionalCard({ professional }: { professional: MentalHealthProfessi
 	return (
 		<Link
 			href={`/mental-health-professionals/${professional.slug || professional._id}`}
-			className="h-full flex flex-col bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow"
+			className="h-full flex flex-col bg-surface-container-lowest rounded-xl p-5 hover:bg-surface-variant transition-colors no-underline"
+			style={{ boxShadow: 'var(--shadow-ambient)' }}
 		>
 			<div className="flex items-start gap-3 mb-3">
 				{professional.profilePicture ? (
@@ -253,20 +240,20 @@ function ProfessionalCard({ professional }: { professional: MentalHealthProfessi
 						className="w-16 h-16 rounded-full object-cover flex-shrink-0"
 					/>
 				) : (
-					<div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+					<div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0">
 						<span className="text-2xl">👤</span>
 					</div>
 				)}
 				<div className="flex-1 min-w-0">
-					<h3 className="text-lg font-semibold text-gray-900 truncate">{professional.name}</h3>
+					<h3 className="text-lg font-semibold text-on-surface truncate">{professional.name}</h3>
 					{professional.designation && (
-						<p className="text-sm text-gray-600">
+						<p className="text-sm text-on-surface-variant">
 							{professional.designation.replace(/_/g, ' ')}
 							{professional.designationOther && ` - ${professional.designationOther}`}
 						</p>
 					)}
 					{professional.verified && (
-						<span className="inline-flex items-center text-xs text-green-600 mt-1">
+						<span className="inline-flex items-center text-xs text-on-secondary-container mt-1">
 							✓ Verified
 						</span>
 					)}
@@ -274,10 +261,10 @@ function ProfessionalCard({ professional }: { professional: MentalHealthProfessi
 			</div>
 
 			{professional.about && (
-				<p className="text-sm text-gray-700 line-clamp-3 mb-3">{professional.about}</p>
+				<p className="text-sm text-on-surface-variant line-clamp-3 mb-3">{professional.about}</p>
 			)}
 
-			<div className="mt-auto space-y-2 text-xs text-gray-600">
+			<div className="mt-auto space-y-2 text-xs text-on-surface-variant">
 				{professional.location?.city && (
 					<div className="flex items-center gap-1">
 						<span>📍</span>
@@ -289,10 +276,10 @@ function ProfessionalCard({ professional }: { professional: MentalHealthProfessi
 				)}
 
 				<div className="flex items-center gap-2">
-					<span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+					<span className="inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-medium bg-surface-container-low text-on-surface-variant">
 						{TYPE_LABELS[professional.type] || professional.type.replace(/_/g, ' ')}
 					</span>
-					<span className="text-xs text-gray-500">
+					<span className="text-xs text-on-surface-variant">
 						{MODE_LABELS[professional.modeOfDelivery] || professional.modeOfDelivery.replace(/_/g, ' ')}
 					</span>
 				</div>
@@ -310,17 +297,16 @@ function ProfessionalCard({ professional }: { professional: MentalHealthProfessi
 					{professional.specializations.slice(0, 3).map((spec, idx) => (
 						<span
 							key={idx}
-							className="inline-flex items-center rounded px-2 py-0.5 text-[11px] bg-gray-100 text-gray-700 border border-gray-200"
+							className="inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] bg-surface-container-low text-on-surface-variant"
 						>
 							{spec.replace(/_/g, ' ')}
 						</span>
 					))}
 					{professional.specializations.length > 3 && (
-						<span className="text-[11px] text-gray-400">+{professional.specializations.length - 3}</span>
+						<span className="text-[11px] text-on-surface-variant">+{professional.specializations.length - 3}</span>
 					)}
 				</div>
 			)}
 		</Link>
 	);
 }
-

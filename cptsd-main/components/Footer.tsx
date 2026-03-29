@@ -3,64 +3,64 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 mt-16">
+    <footer className="bg-surface-container-low mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <Image 
-                src="/logo-final.svg" 
-                alt="CPTSD.in" 
+            <Link href="/" className="flex items-center gap-2 mb-4 no-underline">
+              <Image
+                src="/logo-final.svg"
+                alt="CPTSD.in"
                 width={40}
                 height={40}
                 className="h-10 w-10"
               />
-              <h3 className="font-semibold text-gray-900">CPTSD.in</h3>
+              <h3 className="font-semibold text-on-surface">CPTSD.in</h3>
             </Link>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-on-surface-variant">
               An awareness and education project about Complex PTSD in the Indian context.
               This is not a medical or emergency service.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
+            <h3 className="font-semibold text-on-surface mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/support#helplines" className="text-gray-600 hover:text-gray-900">
+                <Link href="/support#helplines" className="text-on-surface-variant hover:text-primary">
                   Helplines
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-600 hover:text-gray-900">
+                <Link href="/about" className="text-on-surface-variant hover:text-primary">
                   About
                 </Link>
               </li>
               <li>
-                <Link href="/community" className="text-gray-600 hover:text-gray-900">
+                <Link href="/community" className="text-on-surface-variant hover:text-primary">
                   Community
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Legal</h3>
+            <h3 className="font-semibold text-on-surface mb-4">Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
+                <Link href="/privacy" className="text-on-surface-variant hover:text-primary">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-600 hover:text-gray-900">
+                <Link href="/terms" className="text-on-surface-variant hover:text-primary">
                   Terms of Service
                 </Link>
               </li>
             </ul>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <div className="bg-gray-100 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-700 leading-relaxed">
+        <div className="mt-8 pt-8">
+          <div className="bg-surface-container-high rounded-xl p-4 mb-4">
+            <p className="text-sm text-on-surface leading-relaxed">
               <strong>CPTSD.in is an awareness and peer-support project.</strong> We share educational
               information about complex trauma, emotional neglect and mental health. We do not provide
               diagnosis, therapy, or emergency services. If you are in crisis, feeling unsafe, or
@@ -68,7 +68,7 @@ export default function Footer() {
               helpline, or go to the nearest hospital emergency department.
             </p>
           </div>
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-on-surface-variant">
             <p>© {new Date().getFullYear()} CPTSD.in. All rights reserved.</p>
           </div>
         </div>

@@ -3,22 +3,22 @@ import Link from 'next/link';
 export default function PrivacyPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
+      <h1 className="text-4xl font-bold text-on-surface mb-8">Privacy Policy</h1>
 
       <div className="prose prose-lg max-w-none">
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-6 mb-8 rounded">
-          <p className="text-gray-700 text-sm leading-relaxed">
+        <div className="bg-surface-container-high border-l-4 border-primary-container p-6 mb-8 rounded-xl">
+          <p className="text-on-surface text-sm leading-relaxed">
             <strong>Legal Notice:</strong> This is a simple, non-legal-advice template. This privacy
             policy should be reviewed by a qualified lawyer before launch.
           </p>
         </div>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">What We Collect</h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">What We Collect</h2>
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             CPTSD.in collects minimal information:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface">
             <li>
               <strong>Basic site analytics:</strong> If we use analytics tools (e.g., anonymised
               logs, Vercel Analytics, Plausible), we collect anonymised usage data to understand how
@@ -40,9 +40,9 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">How We Use Your Information</h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">We commit to:</p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">How We Use Your Information</h2>
+          <p className="text-on-surface text-lg leading-relaxed mb-4">We commit to:</p>
+          <ul className="list-disc pl-6 space-y-2 text-on-surface">
             <li>
               <strong>Not selling personal data.</strong> We do not sell, rent, or trade your
               information to third parties.
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Data Storage</h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Data Storage</h2>
+          <p className="text-on-surface text-lg leading-relaxed">
             Story submissions are stored securely. Pseudonyms and story content are kept separate from
             any identifying information. We take reasonable steps to protect your data, but no
             online service is 100% secure.
@@ -67,38 +67,38 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Cookies and Analytics</h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Cookies and Analytics</h2>
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             If we use analytics tools (e.g., Vercel Analytics, Plausible, Google Analytics), they may
             use cookies or similar technologies. These tools help us understand:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface">
             <li>How many people visit the site</li>
             <li>Which pages are most viewed</li>
             <li>General geographic information (country/region level, not personal addresses)</li>
           </ul>
-          <p className="text-gray-700 text-lg leading-relaxed mt-4">
+          <p className="text-on-surface text-lg leading-relaxed mt-4">
             You can control cookies through your browser settings. Disabling cookies may affect site
             functionality.
           </p>
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Third-Party Services</h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Third-Party Services</h2>
+          <p className="text-on-surface text-lg leading-relaxed">
             This website may link to external sites (helplines, directories, educational resources).
             We are not responsible for the privacy practices of these external sites. Please review
             their privacy policies separately.
           </p>
         </section>
 
-        <section className="mb-12 bg-red-50 border-l-4 border-red-400 p-6 rounded">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Emergency Contact</h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+        <section className="mb-12 bg-surface-container-low border-l-4 border-primary p-6 rounded-xl">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Emergency Contact</h2>
+          <p className="text-on-surface text-lg leading-relaxed">
             <strong>Email or contact forms are not monitored for emergencies.</strong> If you are in
             crisis or immediate danger, please contact emergency services, a crisis helpline, or go
             to the nearest hospital. See our{' '}
-            <Link href="/support#helplines" className="text-blue-600 hover:text-blue-700">
+            <Link href="/support#helplines">
               support page
             </Link>{' '}
             for helpline numbers.
@@ -106,11 +106,11 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Rights</h2>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Your Rights</h2>
+          <p className="text-on-surface text-lg leading-relaxed mb-4">
             You have the right to:
           </p>
-          <ul className="list-disc pl-6 space-y-2 text-gray-700">
+          <ul className="list-disc pl-6 space-y-2 text-on-surface">
             <li>Request access to information we hold about you</li>
             <li>Request correction of inaccurate information</li>
             <li>Request deletion of your story submission (contact us through community channels)</li>
@@ -118,16 +118,16 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Changes to Privacy Policy</h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Changes to Privacy Policy</h2>
+          <p className="text-on-surface text-lg leading-relaxed">
             CPTSD.in may update this privacy policy from time to time. We will notify users of
             significant changes. Continued use of the website constitutes acceptance of any changes.
           </p>
         </section>
 
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact</h2>
-          <p className="text-gray-700 text-lg leading-relaxed">
+          <h2 className="text-2xl font-bold text-on-surface mb-4">Contact</h2>
+          <p className="text-on-surface text-lg leading-relaxed">
             For questions about this privacy policy, please contact us through our community
             channels. Note that contact forms are not monitored for emergencies.
           </p>
@@ -136,4 +136,3 @@ export default function PrivacyPage() {
     </div>
   );
 }
-

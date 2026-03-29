@@ -362,7 +362,7 @@ export default function FloatingPetsContainer({
       {pets.length > 0 && (
         <div className="fixed bottom-4 right-4 z-50 flex gap-2 items-center">
           {interactionCount > 0 && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs text-gray-600 shadow-md flex items-center gap-1">
+            <div className="glass rounded-full px-3 py-1 text-xs text-on-surface-variant flex items-center gap-1" style={{ boxShadow: 'var(--shadow-ambient)' }}>
               <span>💚</span>
               <span>{interactionCount}</span>
             </div>

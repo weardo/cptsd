@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { getApprovedStories } from '@/lib/dataActions';
 
-// Force dynamic rendering to fetch data at request time
 export const dynamic = 'force-dynamic';
 
 export default async function StoriesPage() {
@@ -10,15 +9,12 @@ export default async function StoriesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Community Stories</h1>
-        <p className="text-xl text-gray-700 mb-6">
+        <h1 className="text-4xl font-bold text-on-surface mb-4">Community Stories</h1>
+        <p className="text-xl text-on-surface mb-6">
           Shared experiences from people navigating CPTSD. These stories are shared pseudonymously
           to protect privacy while creating connection.
         </p>
-        <Link
-          href="/stories/submit"
-          className="btn btn-secondary inline-block text-center"
-        >
+        <Link href="/stories/submit" className="btn btn-secondary inline-block text-center no-underline">
           Share Your Story
         </Link>
       </div>
@@ -29,22 +25,20 @@ export default async function StoriesPage() {
             <Link
               key={story.id}
               href={`/stories/${story.id}`}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+              className="bg-surface-container-lowest rounded-xl p-6 hover:bg-surface-variant transition-colors no-underline"
+              style={{ boxShadow: 'var(--shadow-ambient)' }}
             >
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">{story.title}</h2>
-              <p className="text-sm text-gray-500 mb-3">By {story.pseudonym}</p>
-              <p className="text-gray-600 line-clamp-3 mb-4">{story.excerpt}...</p>
-              <span className="text-blue-600 font-medium">Read more →</span>
+              <h2 className="text-xl font-semibold text-on-surface mb-2">{story.title}</h2>
+              <p className="text-sm text-on-surface-variant mb-3">By {story.pseudonym}</p>
+              <p className="text-on-surface-variant line-clamp-3 mb-6">{story.excerpt}...</p>
+              <span className="text-primary font-medium">Read more →</span>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-600 text-lg mb-4">No community stories have been published yet.</p>
-          <Link
-            href="/stories/submit"
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
+        <div className="bg-surface-container-lowest rounded-xl p-12 text-center" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <p className="text-on-surface-variant text-lg mb-6">No community stories have been published yet.</p>
+          <Link href="/stories/submit" className="text-primary font-medium">
             Be the first to share your story →
           </Link>
         </div>
@@ -52,4 +46,3 @@ export default async function StoriesPage() {
     </div>
   );
 }
-

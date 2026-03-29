@@ -46,7 +46,6 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 		});
 	}, [initialItems, kind, tag, query]);
 
-	// Track search queries (debounced)
 	useEffect(() => {
 		if (query.trim().length > 2) {
 			const timer = setTimeout(() => {
@@ -56,7 +55,6 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 		}
 	}, [query, filtered.length]);
 
-	// Track filter changes
 	useEffect(() => {
 		if (kind !== 'ALL') {
 			trackFilter('kind', kind);
@@ -74,7 +72,7 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 
 	return (
 		<div className="space-y-8">
-			<div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+			<div className="bg-surface-container-lowest rounded-xl p-4" style={{ boxShadow: 'var(--shadow-ambient)' }}>
 				<div className="flex flex-col md:flex-row md:items-center gap-3">
 					<div className="flex-1">
 						<label htmlFor="q" className="sr-only">
@@ -86,7 +84,7 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Search by title, description, tags…"
-							className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							className="w-full rounded-lg bg-surface-container-low px-3 py-2 text-sm text-on-surface outline outline-1 outline-outline-variant/15 focus:outline-2 focus:outline-primary placeholder:text-on-surface-variant/50"
 						/>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -95,10 +93,10 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 								key={t.key}
 								type="button"
 								onClick={() => setKind(t.key)}
-								className={`px-3 py-1.5 rounded-full text-sm border ${
+								className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
 									kind === t.key
-										? 'bg-blue-600 text-white border-blue-600'
-										: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+										? 'bg-primary text-white'
+										: 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
 								}`}
 								aria-pressed={kind === t.key}
 							>
@@ -112,10 +110,10 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 						<button
 							type="button"
 							onClick={() => setTag(null)}
-							className={`px-2.5 py-1 rounded-full text-xs border ${
+							className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
 								tag == null
-									? 'bg-gray-800 text-white border-gray-800'
-									: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+									? 'bg-primary text-white'
+									: 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
 							}`}
 						>
 							All tags
@@ -125,10 +123,10 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 								key={t}
 								type="button"
 								onClick={() => setTag(t === tag ? null : t)}
-								className={`px-2.5 py-1 rounded-full text-xs border ${
+								className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
 									tag === t
-										? 'bg-gray-900 text-white border-gray-900'
-										: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+										? 'bg-primary text-white'
+										: 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
 								}`}
 								aria-pressed={tag === t}
 							>
@@ -140,15 +138,15 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 			</div>
 
 			{noData && (
-				<div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-					<p className="text-gray-700">
+				<div className="bg-surface-container-low rounded-xl p-6">
+					<p className="text-on-surface">
 						We're setting up our featured content library. Check back soon.
 					</p>
 				</div>
 			)}
 			{noMatches && (
-				<div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-					<p className="text-gray-700">
+				<div className="bg-surface-container-low rounded-xl p-6">
+					<p className="text-on-surface">
 						No items matched your filters. Try clearing filters or changing your search terms.
 					</p>
 				</div>
@@ -166,5 +164,3 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 		</div>
 	);
 }
-
-

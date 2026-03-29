@@ -83,10 +83,10 @@ export default async function BlogPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 w-full">
           {/* Hero Section */}
           <section className="text-center mb-12 lg:mb-16 py-8 lg:py-12 px-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 lg:mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-on-surface mb-4 lg:mb-6 leading-tight">
               Welcome to Your Healing Journey
             </h1>
-            <p className="text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg lg:text-xl text-on-surface-variant max-w-3xl mx-auto leading-relaxed">
               A safe, supportive space for sharing resources, insights, and
               stories about Complex PTSD recovery and healing.
             </p>
@@ -106,7 +106,7 @@ export default async function BlogPage({
                   name="search"
                   defaultValue={params.search || ''}
                   placeholder="Search articles..."
-                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-lavender focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-4 py-3 pl-12 bg-surface-container-lowest rounded-lg outline outline-1 outline-outline-variant/15 focus:outline-2 focus:outline-primary text-on-surface placeholder:text-on-surface-variant/50"
                   aria-label="Search articles"
                 />
                 <svg
@@ -133,7 +133,7 @@ export default async function BlogPage({
                 {params.search && (
                   <Link
                     href="/blog"
-                    className="px-6 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-300 transition-colors font-semibold"
+                    className="px-6 py-3 bg-surface-container-low text-on-surface-variant rounded-lg hover:bg-surface-variant transition-colors font-semibold no-underline"
                   >
                     Clear
                   </Link>
@@ -146,10 +146,10 @@ export default async function BlogPage({
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/blog"
-                  className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
+                  className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all no-underline ${
                     !params.topic
-                      ? 'btn-primary text-white shadow-md'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-soft-lavender'
+                      ? 'bg-primary text-white'
+                      : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
                   }`}
                 >
                   All Topics
@@ -158,10 +158,10 @@ export default async function BlogPage({
                   <Link
                     key={topic.id}
                     href={`/blog?topic=${topic.id}`}
-                    className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
+                    className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all no-underline ${
                       params.topic === topic.id
-                        ? 'btn-primary text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-soft-lavender'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
                     }`}
                   >
                     {topic.name}
@@ -176,10 +176,10 @@ export default async function BlogPage({
             <div className="text-center py-20">
               <div className="max-w-md mx-auto">
                 <div className="text-6xl mb-6">📝</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                <h2 className="text-2xl font-bold text-on-surface mb-3">
                   No articles found
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-on-surface-variant mb-6">
                   {params.search || params.topic
                     ? 'Try adjusting your search or filter criteria.'
                     : 'Check back soon for new articles.'}
@@ -216,24 +216,24 @@ export default async function BlogPage({
               {/* Pagination */}
               {totalPages > 1 && (
                 <nav
-                  className="flex justify-center items-center gap-4 pt-8 border-t border-gray-200"
+                  className="flex justify-center items-center gap-4 pt-8"
                   aria-label="Pagination"
                 >
                   {page > 1 && (
                     <Link
                       href={`/blog?page=${page - 1}${params.topic ? `&topic=${params.topic}` : ''}${params.search ? `&search=${encodeURIComponent(params.search)}` : ''}`}
-                      className="px-6 py-3 bg-white text-gray-700 hover:bg-gray-50 font-semibold rounded-lg border border-gray-300 transition-colors shadow-sm"
+                      className="px-6 py-3 bg-surface-container-low text-on-surface-variant hover:bg-surface-variant font-semibold rounded-xl transition-colors no-underline"
                     >
                       ← Previous
                     </Link>
                   )}
-                  <span className="px-6 py-3 text-gray-600 text-sm font-medium">
+                  <span className="px-6 py-3 text-on-surface-variant text-sm font-medium">
                     Page {page} of {totalPages}
                   </span>
                   {page < totalPages && (
                     <Link
                       href={`/blog?page=${page + 1}${params.topic ? `&topic=${params.topic}` : ''}${params.search ? `&search=${encodeURIComponent(params.search)}` : ''}`}
-                      className="px-6 py-3 bg-white text-gray-700 hover:bg-gray-50 font-semibold rounded-lg border border-gray-300 transition-colors shadow-sm"
+                      className="px-6 py-3 bg-surface-container-low text-on-surface-variant hover:bg-surface-variant font-semibold rounded-xl transition-colors no-underline"
                     >
                       Next →
                     </Link>
