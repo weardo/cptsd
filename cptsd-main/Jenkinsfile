@@ -48,8 +48,13 @@ pipeline {
                         mkdir -p ${DEPLOY_PATH}
                         printf 'MONGODB_URI=%s\\n' "\${MONGODB_URI:-}" > ${DEPLOY_PATH}/.env
 
-                        # Stop any existing container
+                        # Stop any existing container(s) on port 3002
                         docker rm -f cptsd-main-app 2>/dev/null || true
+                        # Also remove any other container that might hold port 3002
+                        docker ps -q --filter publish=3002 | xargs -r docker rm -f || true
+                        # Kill any non-Docker process on port 3002 (e.g. dev server)
+                        fuser -k 3002/tcp 2>/dev/null || true
+                        sleep 2
 
                         # Start production container
                         docker run -d \\

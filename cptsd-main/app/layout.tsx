@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Noto_Serif, Plus_Jakarta_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,16 +7,28 @@ import CrisisBanner from '@/components/CrisisBanner';
 import { FloatingPetsContainer } from '@cptsd/pets';
 import { Analytics } from '@/components/Analytics';
 
-const notoSerif = Noto_Serif({
-  subsets: ['latin'],
+// Self-hosted via @fontsource-variable — no network needed at build time
+const notoSerif = localFont({
+  src: '../node_modules/@fontsource-variable/noto-serif/files/noto-serif-latin-standard-normal.woff2',
   variable: '--font-noto-serif',
   display: 'swap',
+  weight: '100 900',
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
+const plusJakartaSans = localFont({
+  src: [
+    {
+      path: '../node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2',
+      style: 'normal',
+    },
+    {
+      path: '../node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-italic.woff2',
+      style: 'italic',
+    },
+  ],
   variable: '--font-plus-jakarta-sans',
   display: 'swap',
+  weight: '200 800',
 });
 
 export const metadata: Metadata = {
