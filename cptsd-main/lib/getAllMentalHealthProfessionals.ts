@@ -67,12 +67,20 @@ export interface MentalHealthProfessionalDoc {
 	updatedAt: string;
 }
 
-export async function getAllMentalHealthProfessionals(): Promise<MentalHealthProfessionalDoc[]> {
+export async function getAllMentalHealthProfessionals(filters?: {
+	featured?: boolean;
+	verified?: boolean;
+	limit?: number;
+}): Promise<MentalHealthProfessionalDoc[]> {
 	try {
 		await connectDB();
-		const docs = await MentalHealthProfessional.find({ status: 'ACTIVE' })
-			.sort({ featured: -1, verified: -1, name: 1 })
-			.lean();
+		const query: Record<string, unknown> = { status: 'ACTIVE' };
+		if (filters?.featured !== undefined) query.featured = filters.featured;
+		if (filters?.verified !== undefined) query.verified = filters.verified;
+		let cursor = MentalHealthProfessional.find(query)
+			.sort({ featured: -1, verified: -1, name: 1 });
+		if (filters?.limit) cursor = cursor.limit(filters.limit);
+		const docs = await cursor.lean();
 		return docs.map((d: any) => ({
 			_id: d._id.toString(),
 			type: d.type,
