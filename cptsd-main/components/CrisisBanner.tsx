@@ -7,8 +7,8 @@ export default function CrisisBanner() {
         <p className="text-sm text-on-surface">
           <span className="font-semibold">In crisis or feeling unsafe right now?</span>{' '}
           This website cannot support emergencies.{' '}
-          <Link href="/support#helplines" className="font-medium text-primary hover:text-primary-container">
-            See Indian mental health helplines and emergency options on our Support page
+          <Link href="/find-help#helplines" className="font-medium text-primary hover:text-primary-container">
+            See Indian mental health helplines and emergency options on our Find Help page
           </Link>
         </p>
       </div>

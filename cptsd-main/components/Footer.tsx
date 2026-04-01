@@ -26,7 +26,7 @@ export default function Footer() {
             <h3 className="font-semibold text-on-surface mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/support#helplines" className="text-on-surface-variant hover:text-primary">
+                <Link href="/find-help#helplines" className="text-on-surface-variant hover:text-primary">
                   Helplines
                 </Link>
               </li>

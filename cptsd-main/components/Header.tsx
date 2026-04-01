@@ -39,7 +39,7 @@ export default function Header() {
             <Link href="/resources" onClick={() => trackNavigation('/resources', 'Resources')} className="text-on-surface-variant hover:text-primary no-underline">
               Resources
             </Link>
-            <Link href="/mental-health-professionals" onClick={() => trackNavigation('/mental-health-professionals', 'Mental Health Professionals')} className="text-on-surface-variant hover:text-primary no-underline">
+            <Link href="/find-help" onClick={() => trackNavigation('/find-help', 'Find Help')} className="text-on-surface-variant hover:text-primary no-underline">
               Find Help
             </Link>
             <Link href="/support" onClick={() => trackNavigation('/support', 'Support')} className="text-on-surface-variant hover:text-primary no-underline">
@@ -121,7 +121,7 @@ export default function Header() {
                 Resources
               </Link>
               <Link
-                href="/mental-health-professionals"
+                href="/find-help"
                 className="block px-3 py-2 text-base font-medium text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg no-underline"
                 onClick={() => setMobileMenuOpen(false)}
               >

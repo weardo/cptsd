@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getAllResources } from '@/lib/dataActions';
 import { ResourceType } from '@cptsd/db';
 
@@ -26,6 +27,17 @@ export default async function SupportPage() {
             This page lists support options that may help you if you are struggling. We do not run
             any helplines, NGOs, or therapy services ourselves. Information can change, so please
             always check the official website or number before relying on it.
+          </p>
+        </div>
+
+        {/* Cross-link to Find Help */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 mb-8" style={{ boxShadow: 'var(--shadow-ambient)' }}>
+          <p className="text-on-surface leading-relaxed">
+            Looking for helplines and mental health professionals?{' '}
+            <Link href="/find-help" className="font-medium text-primary hover:text-primary-container">
+              Visit our Find Help page
+            </Link>{' '}
+            for a comprehensive guide to crisis support, therapist directories, and organisations in India.
           </p>
         </div>
 
