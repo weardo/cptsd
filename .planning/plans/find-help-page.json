@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "slug": "find-help-page",
+    "spec": null,
+    "created": "2026-04-01T00:00:00.000Z",
+    "planner_depth": "standard",
+    "decisions": [
+      {
+        "id": "decision-001",
+        "title": "/support page remains but gets cross-link to /find-help",
+        "rationale": "/support is an established URL with backlinks. Rather than redirecting or removing, add a cross-link banner on /support pointing users to /find-help as the canonical helplines destination."
+      },
+      {
+        "id": "decision-002",
+        "title": "/find-help is the canonical helplines destination",
+        "rationale": "All navigation links (Header, Footer, CrisisBanner) and cross-page references to helplines (#helplines anchor) will point to /find-help#helplines. The /support page will remain for broader support resources."
+      },
+      {
+        "id": "decision-003",
+        "title": "/mental-health-professionals remains as full directory linked from /find-help",
+        "rationale": "The /find-help page shows a curated preview of featured professionals, with a CTA link to /mental-health-professionals for the full browsable directory. The existing [slug] detail route remains unchanged."
+      }
+    ]
+  },
+  "phases": [
+    {
+      "id": "phase-0",
+      "name": "Data layer and contracts",
+      "epics": [
+        {
+          "id": "epic-001",
+          "name": "Data fetching functions for Find Help page",
+          "stories": [
+            {
+              "id": "story-001",
+              "name": "Add featured filter to getAllMentalHealthProfessionals",
+              "tasks": [
+                {
+                  "id": "task-001",
+                  "description": "Refactor getAllMentalHealthProfessionals() in cptsd-main/lib/getAllMentalHealthProfessionals.ts to accept optional filter params { featured?: boolean, verified?: boolean, limit?: number }. When featured: true is passed, add { featured: true } to the MongoDB query. When limit is provided, apply .limit(limit). The existing zero-argument call must continue to work identically (no filters, no limit). Do NOT create a separate function — extend the existing one to avoid duplicating the 30-line mapping block.",
+                  "acceptance_criteria": [
+                    "getAllMentalHealthProfessionals() with no arguments returns the same result as before (all ACTIVE professionals, sorted featured:-1 verified:-1 name:1, no limit)",
+                    "getAllMentalHealthProfessionals({ featured: true, limit: 6 }) returns only ACTIVE professionals with featured: true, limited to 6 results",
+                    "getAllMentalHealthProfessionals({ featured: true }) without limit returns all featured professionals (no limit applied)",
+                    "Return type remains MentalHealthProfessionalDoc[] regardless of filter params",
+                    "When MONGODB_URI is not set or connection times out, function returns [] and logs a warning (matching existing error handling pattern)",
+                    "The mapping block (lines 76-106) is not duplicated — a single mapping function is used"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/lib/getAllMentalHealthProfessionals.ts"],
+                  "layer": "data",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-1",
+      "name": "Core page implementation",
+      "epics": [
+        {
+          "id": "epic-002",
+          "name": "Find Help page server component and sections",
+          "stories": [
+            {
+              "id": "story-002",
+              "name": "Create /find-help route with server component page.tsx",
+              "tasks": [
+                {
+                  "id": "task-003",
+                  "description": "Create the /find-help route directory and server component page at cptsd-main/app/find-help/page.tsx. Import getAllResources from '@/lib/dataActions' and ResourceType from '@cptsd/db'. Import getAllMentalHealthProfessionals from '@/lib/getAllMentalHealthProfessionals'. Fetch resources via getAllResources(), filter into helplines/therapyDirectories/NGOs using ResourceType enum (matching /support page pattern exactly). Fetch featured professionals via getAllMentalHealthProfessionals({ featured: true, limit: 6 }). Render HeroSection, CrisisSection, TherapistPreviewSection, GuidanceSection, DirectoriesSection passing data as props.",
+                  "acceptance_criteria": [
+                    "File cptsd-main/app/find-help/page.tsx exists and exports a default async function FindHelpPage",
+                    "Page exports 'export const dynamic = \"force-dynamic\"'",
+                    "Page exports metadata with title 'Find Help' and descriptive SEO description",
+                    "Page imports getAllResources from '@/lib/dataActions' (NOT from '@/lib/getAllResources')",
+                    "Page imports ResourceType from '@cptsd/db' and uses ResourceType.HELPLINE, ResourceType.THERAPY_DIRECTORY, ResourceType.NGO to index the grouped resources object",
+                    "Page calls getAllMentalHealthProfessionals({ featured: true, limit: 6 }) for therapist preview",
+                    "Page renders 5 distinct sections: hero, crisis/helplines, therapist preview, guidance, directories",
+                    "Page uses max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 layout",
+                    "Page renders without errors when data sources return empty arrays/objects"
+                  ],
+                  "depends_on": ["task-001"],
+                  "target_files": ["cptsd-main/app/find-help/page.tsx"],
+                  "layer": "integration",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-003",
+              "name": "Build Hero section component",
+              "tasks": [
+                {
+                  "id": "task-004",
+                  "description": "Create HeroSection component at cptsd-main/app/find-help/HeroSection.tsx. Server component with empathetic hero: large serif heading conveying hope and safety, supportive subheading, and disclaimer box matching existing pattern (bg-surface-container-high border-l-4 border-primary-container p-6 rounded-xl).",
+                  "acceptance_criteria": [
+                    "File cptsd-main/app/find-help/HeroSection.tsx exists and exports default function",
+                    "Renders h1 with empathetic, trauma-informed heading using font-serif class",
+                    "Renders supportive subheading paragraph beneath h1",
+                    "Renders disclaimer div using bg-surface-container-high border-l-4 border-primary-container p-6 rounded-xl",
+                    "No 'use client' directive — is a server component",
+                    "No 1px borders — boundaries via background color shifts only"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/find-help/HeroSection.tsx"],
+                  "layer": "ui",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-004",
+              "name": "Build Crisis and Helplines section",
+              "tasks": [
+                {
+                  "id": "task-005",
+                  "description": "Create CrisisSection component at cptsd-main/app/find-help/CrisisSection.tsx. Define and export a ResourceItem interface matching getAllResources() shape: { id: string, title: string, description: string, url: string | null, phone: string | null, region: string | null, languages: string[], tags: string[], isFeatured: boolean, featured: boolean }. Receives featured and other helplines as props. Renders: prominent emergency info box with 112 number, featured helplines as large cards with tel: links, other helplines in 2-column grid, graceful empty state. Has id='helplines' for anchor linking.",
+                  "acceptance_criteria": [
+                    "File exists and exports default function CrisisSection",
+                    "Exports ResourceItem interface with fields: id, title, description, url, phone, region, languages, tags, isFeatured, featured",
+                    "Accepts props: { featuredHelplines: ResourceItem[], otherHelplines: ResourceItem[] }",
+                    "Renders emergency info box with 112 number and hospital instructions",
+                    "Featured helplines render as large cards with tel: links using the phone field",
+                    "Other helplines render in grid-cols-1 md:grid-cols-2 layout",
+                    "Section has id='helplines' attribute for anchor linking",
+                    "Empty state fallback when both arrays are empty",
+                    "Cards use rounded-xl and bg-surface-container-lowest/high — no 1px borders"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/find-help/CrisisSection.tsx"],
+                  "layer": "ui",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-005",
+              "name": "Build Therapist Preview section",
+              "tasks": [
+                {
+                  "id": "task-006",
+                  "description": "Create TherapistPreviewSection component at cptsd-main/app/find-help/TherapistPreviewSection.tsx. Import MentalHealthProfessionalDoc from '@/lib/getAllMentalHealthProfessionals'. Shows featured professionals in responsive grid. Each card links to /mental-health-professionals/${professional.slug} (confirmed route exists). CTA link to /mental-health-professionals.",
+                  "acceptance_criteria": [
+                    "File exists and exports default function TherapistPreviewSection",
+                    "Accepts props: { professionals: MentalHealthProfessionalDoc[] } using imported type",
+                    "Renders cards in grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+                    "Cards show name, designation, location (city/state), up to 3 specializations, verified badge when professional.verified is true",
+                    "Each card links to /mental-health-professionals/${professional.slug} using next/link",
+                    "CTA link to /mental-health-professionals with gradient styling",
+                    "Empty state fallback with link to full directory",
+                    "Cards use rounded-xl bg-surface-container-lowest with ambient shadow"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/find-help/TherapistPreviewSection.tsx"],
+                  "layer": "ui",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-006",
+              "name": "Build Guidance and Directories sections",
+              "tasks": [
+                {
+                  "id": "task-007",
+                  "description": "Create GuidanceSection component at cptsd-main/app/find-help/GuidanceSection.tsx. Static 'Not sure where to start?' section with navigation link cards to /start-here, /learn, /support.",
+                  "acceptance_criteria": [
+                    "File exists and exports default function GuidanceSection",
+                    "Renders h2 containing 'Not sure where to start?'",
+                    "Renders 3 link cards to /start-here, /learn, and /support",
+                    "Cards use bg-surface-container-lowest rounded-xl with ambient shadow and hover:bg-surface-variant",
+                    "Uses Link from next/link for internal navigation"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/find-help/GuidanceSection.tsx"],
+                  "layer": "ui",
+                  "status": "pending",
+                  "attempts": 0
+                },
+                {
+                  "id": "task-008",
+                  "description": "Create DirectoriesSection component at cptsd-main/app/find-help/DirectoriesSection.tsx. Import ResourceItem from CrisisSection. Receives therapy directories and NGOs as props. Renders resource cards with title, description, website link, phone number, and graceful empty state.",
+                  "acceptance_criteria": [
+                    "File exists and exports default function DirectoriesSection",
+                    "Accepts props: { therapyDirectories: ResourceItem[], ngos: ResourceItem[] } using ResourceItem from CrisisSection",
+                    "Renders cards with title, description, website link (target=_blank rel='noopener noreferrer'), phone if available",
+                    "Cards use bg-surface-container-lowest rounded-xl with ambient shadow",
+                    "Empty state fallback when both arrays empty",
+                    "Disclaimer note about not vetting services"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/find-help/DirectoriesSection.tsx"],
+                  "layer": "ui",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Navigation updates and build verification",
+      "epics": [
+        {
+          "id": "epic-003",
+          "name": "Update navigation and cross-links",
+          "stories": [
+            {
+              "id": "story-007",
+              "name": "Update Header nav link",
+              "tasks": [
+                {
+                  "id": "task-009",
+                  "description": "Update Header.tsx: change 'Find Help' link href from /mental-health-professionals to /find-help in both desktop and mobile menus. Desktop link has trackNavigation — update to '/find-help'. Mobile link does NOT have trackNavigation — do NOT add it. /support links must remain unchanged.",
+                  "acceptance_criteria": [
+                    "Desktop 'Find Help' link href is '/find-help'",
+                    "Desktop trackNavigation call updated to '/find-help'",
+                    "Mobile 'Find Help' link href is '/find-help'",
+                    "Mobile onClick still only calls setMobileMenuOpen(false) — no trackNavigation added",
+                    "Link text remains 'Find Help' in both menus",
+                    "/support link href remains '/support' in both desktop and mobile — unchanged",
+                    "No other links changed"
+                  ],
+                  "depends_on": ["task-003"],
+                  "target_files": ["cptsd-main/components/Header.tsx"],
+                  "layer": "navigation",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-008",
+              "name": "Update CrisisBanner link",
+              "tasks": [
+                {
+                  "id": "task-010",
+                  "description": "Update CrisisBanner.tsx: change link from /support#helplines to /find-help#helplines. Update link text to reference Find Help page.",
+                  "acceptance_criteria": [
+                    "Link href is '/find-help#helplines'",
+                    "Link text references 'Find Help page'",
+                    "Styling unchanged",
+                    "No other structural changes"
+                  ],
+                  "depends_on": ["task-003"],
+                  "target_files": ["cptsd-main/components/CrisisBanner.tsx"],
+                  "layer": "navigation",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-009",
+              "name": "Update Footer link",
+              "tasks": [
+                {
+                  "id": "task-011",
+                  "description": "Update Footer.tsx: change Helplines link href from /support#helplines to /find-help#helplines.",
+                  "acceptance_criteria": [
+                    "Helplines Link href is '/find-help#helplines'",
+                    "Helplines link text remains 'Helplines'",
+                    "Footer still contains all original links: About, Community, Privacy Policy, Terms of Service, logo",
+                    "No other links changed"
+                  ],
+                  "depends_on": ["task-003"],
+                  "target_files": ["cptsd-main/components/Footer.tsx"],
+                  "layer": "navigation",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-010",
+              "name": "Add /find-help to sitemap",
+              "tasks": [
+                {
+                  "id": "task-012",
+                  "description": "Update sitemap.ts to add /find-help with priority 0.9 and changeFrequency 'weekly'.",
+                  "acceptance_criteria": [
+                    "sitemap.ts includes entry with url containing /find-help",
+                    "Entry has changeFrequency: 'weekly' and priority: 0.9",
+                    "Sitemap function still returns valid array with all existing entries intact"
+                  ],
+                  "depends_on": [],
+                  "target_files": ["cptsd-main/app/sitemap.ts"],
+                  "layer": "integration",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-012",
+              "name": "Add cross-link banner on /support page",
+              "tasks": [
+                {
+                  "id": "task-014",
+                  "description": "Add a cross-link banner near the top of /support page directing users to /find-help as the canonical helplines hub. Place after the disclaimer but before Emergency Note. Use bg-surface-container-lowest rounded-xl card with Link to /find-help.",
+                  "acceptance_criteria": [
+                    "Cross-link banner rendered between disclaimer and emergency note",
+                    "Contains next/link Link pointing to '/find-help'",
+                    "Text communicates /find-help has helplines and directory in empathetic tone",
+                    "Uses bg-surface-container-lowest rounded-xl styling",
+                    "All existing /support page content remains intact"
+                  ],
+                  "depends_on": ["task-003"],
+                  "target_files": ["cptsd-main/app/support/page.tsx"],
+                  "layer": "navigation",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "epic-004",
+          "name": "Build verification and cross-link audit",
+          "stories": [
+            {
+              "id": "story-011",
+              "name": "Update remaining cross-links across pages",
+              "tasks": [
+                {
+                  "id": "task-013a",
+                  "description": "Audit and update all remaining /support#helplines references to /find-help#helplines. Known locations: start-here/page.tsx, about/page.tsx, privacy/page.tsx, terms/page.tsx. Also update resources/page.tsx /support reference to /find-help since it directs users to helplines.",
+                  "acceptance_criteria": [
+                    "start-here/page.tsx: /support#helplines references updated to /find-help#helplines",
+                    "about/page.tsx: /support#helplines updated to /find-help#helplines",
+                    "privacy/page.tsx: /support#helplines updated to /find-help#helplines",
+                    "terms/page.tsx: /support#helplines updated to /find-help#helplines",
+                    "resources/page.tsx: /support link updated to /find-help with text referencing 'Find Help page'",
+                    "No /support references are changed except those explicitly listed above",
+                    "/support page itself not modified by this task"
+                  ],
+                  "depends_on": ["task-003"],
+                  "target_files": [
+                    "cptsd-main/app/start-here/page.tsx",
+                    "cptsd-main/app/about/page.tsx",
+                    "cptsd-main/app/privacy/page.tsx",
+                    "cptsd-main/app/terms/page.tsx",
+                    "cptsd-main/app/resources/page.tsx"
+                  ],
+                  "layer": "navigation",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            },
+            {
+              "id": "story-013",
+              "name": "Build verification",
+              "tasks": [
+                {
+                  "id": "task-013b",
+                  "description": "Run next build to verify entire cptsd-main project compiles successfully with all changes.",
+                  "acceptance_criteria": [
+                    "pnpm build completes successfully (exit code 0)",
+                    "Build output shows /find-help route compiled",
+                    "/support page still exists in build output",
+                    "/mental-health-professionals routes still exist in build output",
+                    "No TypeScript errors related to new imports"
+                  ],
+                  "depends_on": ["task-001", "task-003", "task-004", "task-005", "task-006", "task-007", "task-008", "task-009", "task-010", "task-011", "task-012", "task-013a", "task-014"],
+                  "target_files": [],
+                  "layer": "integration",
+                  "status": "pending",
+                  "attempts": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

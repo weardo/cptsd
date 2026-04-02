@@ -1,0 +1,77 @@
+{
+  "issues": [
+    {
+      "severity": "critical",
+      "task_id": "task-003",
+      "issue": "Ambiguous getAllResources import — TWO different functions exist: lib/dataActions.ts (grouped by ResourceType) and lib/getAllResources.ts (flat array). Wrong import causes runtime failure.",
+      "fix": "Explicitly specify import from @/lib/dataActions, require ResourceType import from @cptsd/db."
+    },
+    {
+      "severity": "critical",
+      "task_id": "task-002",
+      "issue": "task-002 is a decision task, not implementation. AI generator cannot 'document a decision'. /support already proves getAllResources() is sufficient.",
+      "fix": "Delete task-002. Remove from task-003 depends_on. The /support page pattern is sufficient."
+    },
+    {
+      "severity": "critical",
+      "task_id": "task-009",
+      "issue": "Mobile menu does NOT call trackNavigation — only desktop does. Plan says to update trackNavigation in both. Also, /support link must remain unchanged but isn't called out.",
+      "fix": "Fix acceptance criteria to differentiate desktop (has trackNavigation) vs mobile (only has href). Add criterion that /support links remain unchanged."
+    },
+    {
+      "severity": "warning",
+      "task_id": "task-011",
+      "issue": "No criterion verifying Footer's other links remain intact.",
+      "fix": "Add criterion: 'Footer still has all original links — only Helplines href changes'."
+    },
+    {
+      "severity": "warning",
+      "task_id": "task-013",
+      "issue": "Scope creep: 4 file updates + build verification + cross-link audit in one task.",
+      "fix": "Split into task-013a (cross-link updates) and task-013b (build verification only)."
+    },
+    {
+      "severity": "warning",
+      "task_id": null,
+      "issue": "resources/page.tsx links to /support for helplines — not updated in plan.",
+      "fix": "Add task or fold into cross-link audit to update resources/page.tsx href."
+    },
+    {
+      "severity": "warning",
+      "task_id": null,
+      "issue": "/find-help and /support will have near-identical helpline content. No plan for deduplication, redirect, or differentiation.",
+      "fix": "Add plan-level decision or task: either add cross-link banner on /support pointing to /find-help, or document intentional coexistence."
+    },
+    {
+      "severity": "warning",
+      "task_id": "task-006",
+      "issue": "Cards link to /mental-health-professionals/[slug or _id] but dynamic route existence not verified.",
+      "fix": "Verify route exists. Existing route is cptsd-main/app/mental-health-professionals/[slug]/page.tsx. Specify exact pattern."
+    },
+    {
+      "severity": "warning",
+      "task_id": "task-005",
+      "issue": "Props typed as any[] — no type safety for helpline resource shape.",
+      "fix": "Specify actual shape or define ResourceItem interface matching dataActions.ts output."
+    },
+    {
+      "severity": "suggestion",
+      "task_id": "task-001",
+      "issue": "Creating getFeaturedMentalHealthProfessionals duplicates 30-line mapping from getAllMentalHealthProfessionals. DRY violation.",
+      "fix": "Add optional filter params to existing function instead of duplicating."
+    },
+    {
+      "severity": "suggestion",
+      "task_id": "task-004",
+      "issue": "Hardcoded heading text in acceptance criteria is brittle for copy changes.",
+      "fix": "Use 'empathetic, trauma-informed heading' criterion instead of exact text match."
+    },
+    {
+      "severity": "suggestion",
+      "task_id": null,
+      "issue": "No spec reference (meta.spec is null). Plan lacks authoritative feature definition.",
+      "fix": "Add decisions section documenting key choices about /support relationship and canonical helplines destination."
+    }
+  ],
+  "summary": {"critical": 3, "warning": 6, "suggestion": 3}
+}

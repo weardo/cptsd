@@ -1,0 +1,5 @@
+services:
+  app:
+    env_file: []
+    environment:
+      MONGODB_URI: "mongodb://admin:changeme@172.20.0.2:27017/cptsd-cms?authSource=admin"

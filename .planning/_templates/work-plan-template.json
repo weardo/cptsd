@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "slug": "feature-name",
+    "spec": ".planning/specs/feature-name.md",
+    "created": "2026-01-01T00:00:00Z",
+    "planner_depth": "standard"
+  },
+  "phases": [
+    {
+      "id": "phase-0",
+      "name": "Setup & Contracts",
+      "epics": [
+        {
+          "id": "epic-001",
+          "name": "Epic name",
+          "stories": [
+            {
+              "id": "story-001",
+              "name": "Story name",
+              "tasks": [
+                {
+                  "id": "task-001",
+                  "description": "Task description",
+                  "acceptance_criteria": [
+                    "Machine-verifiable criterion 1",
+                    "Machine-verifiable criterion 2",
+                    "Machine-verifiable criterion 3"
+                  ],
+                  "steps": [
+                    "Step 1: what to do",
+                    "Step 2: what to do"
+                  ],
+                  "depends_on": [],
+                  "target_files": [
+                    "src/example.ts",
+                    "tests/example.test.ts"
+                  ],
+                  "status": "pending",
+                  "attempts": 0,
+                  "blocked_reason": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
