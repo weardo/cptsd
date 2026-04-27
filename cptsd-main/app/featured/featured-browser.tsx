@@ -74,7 +74,7 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 		<div className="space-y-8">
 			<div className="bg-surface-container-lowest rounded-xl p-4" style={{ boxShadow: 'var(--shadow-ambient)' }}>
 				<div className="flex flex-col md:flex-row md:items-center gap-3">
-					<div className="flex-1">
+					<div className="flex-1 md:min-w-[18rem]">
 						<label htmlFor="q" className="sr-only">
 							Search featured content
 						</label>
@@ -87,7 +87,7 @@ export default function FeaturedBrowser({ initialItems, allTags }: Props) {
 							className="w-full rounded-lg bg-surface-container-low px-3 py-2 text-sm text-on-surface outline outline-1 outline-outline-variant/15 focus:outline-2 focus:outline-primary placeholder:text-on-surface-variant/50"
 						/>
 					</div>
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap gap-2 md:flex-shrink-0">
 						{KIND_TABS.map((t) => (
 							<button
 								key={t.key}
