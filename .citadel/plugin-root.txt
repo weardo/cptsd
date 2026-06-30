@@ -1,1 +1,0 @@
-/home/astra/.claude/plugins/cache/citadel-local/citadel/1.1.0
