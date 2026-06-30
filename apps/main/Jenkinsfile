@@ -40,24 +40,22 @@ pipeline {
         stage('Build') {
             when { expression { env.REDEPLOY == 'false' } }
             steps {
-                dir('apps/main') {
-                    script {
-                        echo "Building ${APP_NAME} image main:${env.SHA}..."
-                        sh """
-                            echo "MONGODB_URI: \${MONGODB_URI:+SET}"
+                script {
+                    echo "Building ${APP_NAME} image main:${env.SHA}..."
+                    sh """
+                        echo "MONGODB_URI: \${MONGODB_URI:+SET}"
 
-                            # Build with --network=host so the Next.js build can reach
-                            # Google Fonts (required by next/font/google in layout.tsx).
-                            # Tag by immutable short-sha AND latest (the sha enables rollback).
-                            DOCKER_BUILDKIT=0 docker build \\
-                                --network=host \\
-                                --build-arg MONGODB_URI=\${MONGODB_URI:-} \\
-                                -f Dockerfile \\
-                                -t "main:\${SHA}" \\
-                                -t main:latest \\
-                                ..
-                        """
-                    }
+                        # Build from the repo root so the pnpm-workspace.yaml / lockfile / libs
+                        # are all in the build context (monorepo). -f points at the app Dockerfile.
+                        # --network=host so the Next.js build can reach Google Fonts.
+                        DOCKER_BUILDKIT=0 docker build \\
+                            --network=host \\
+                            --build-arg MONGODB_URI=\${MONGODB_URI:-} \\
+                            -f apps/main/Dockerfile \\
+                            -t "main:\${SHA}" \\
+                            -t main:latest \\
+                            .
+                    """
                 }
             }
         }
