@@ -1,6 +1,6 @@
 # Multi-stage build for optimized production image
 FROM node:20-alpine AS base
-# Enable pnpm (used for the workspace install that replaces the copy-hack)
+# Enable pnpm (workspace install replaces the old npm copy-hack symlink)
 RUN corepack enable
 
 # Install dependencies only when needed
@@ -8,25 +8,26 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files from apps/main plus the workspace libs it depends on,
-# then let pnpm wire the @cptsd/* workspace symlinks (replaces the postinstall copy-hack)
-COPY apps/main/package.json ./package.json
-COPY libs/db/package.json ./libs/db/package.json
-COPY libs/pets/package.json ./libs/pets/package.json
-# Minimal in-image pnpm workspace so @cptsd/* resolve as symlinks into ./libs/*
-RUN printf 'packages:\n  - "libs/*"\n' > pnpm-workspace.yaml
-RUN pnpm install --no-frozen-lockfile --loglevel=warn
+# Copy workspace manifests from apps/main (+ root + the @cptsd/* libs it uses)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/main/package.json ./apps/main/
+COPY libs/db/package.json ./libs/db/
+COPY libs/pets/package.json ./libs/pets/
+# pnpm symlinks @cptsd/{db,pets} into node_modules from the workspace (no copy-hack)
+RUN pnpm install --frozen-lockfile --filter ./apps/main...
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+# Bring in the installed workspace (node_modules + manifests)
+COPY --from=deps /app/ ./
 # Copy app source
-COPY apps/main/ .
-# Copy shared libs (db and pets) — @cptsd/* are pnpm workspace symlinks into these
+COPY apps/main/ ./apps/main/
+# Copy shared libs (raw TS source, consumed via transpilePackages)
 COPY libs/db ./libs/db
 COPY libs/pets ./libs/pets
+# Root base tsconfig that apps/main/tsconfig.json extends (../../tsconfig.base.json)
+COPY tsconfig.base.json ./
 
 # Accept build arguments for environment variables
 ARG MONGODB_URI
@@ -36,8 +37,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV MONGODB_URI=${MONGODB_URI:-mongodb://admin:changeme@mongodb:27017/cptsd-cms?authSource=admin}
 
-# Build Next.js application
-RUN pnpm run build
+# Build Next.js application (output: 'standalone')
+RUN pnpm --filter ./apps/main run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -49,21 +50,12 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from standalone build
-# Next.js standalone output structure:
-# - .next/standalone/ contains server.js and all dependencies
-# - .next/standalone/public/ contains public assets (if public directory exists in source)
-# - .next/static/ contains static assets
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Ensure libs are available at runtime
-# Next.js standalone includes dependencies, but we ensure libs are accessible
-# Copy libs directory and recreate symlinks for @cptsd packages
-COPY --from=builder --chown=nextjs:nodejs /app/libs ./libs
-RUN mkdir -p node_modules/@cptsd && \
-    ln -sf ../../libs/db node_modules/@cptsd/db && \
-    ln -sf ../../libs/pets node_modules/@cptsd/pets
+# Copy necessary files from standalone build (monorepo layout: app lives at apps/main).
+# Next standalone bundles the transpiled @cptsd/* source + node_modules, so no
+# runtime symlink/copy-hack is needed.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/main/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/main/.next/static ./apps/main/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/main/public ./apps/main/public
 
 USER nextjs
 
@@ -72,5 +64,5 @@ EXPOSE 3002
 ENV PORT 3002
 ENV HOSTNAME "0.0.0.0"
 
-# Next.js standalone creates server.js in the standalone directory
-CMD ["node", "server.js"]
+# Next.js standalone creates server.js under the app path in the monorepo output
+CMD ["node", "apps/main/server.js"]

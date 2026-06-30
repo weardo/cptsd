@@ -73,22 +73,7 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            when { expression { env.REDEPLOY == 'false' } }
-            steps {
-                // BLOCKING: run the unit's Nx tests in a node container against the
-                // checked-out workspace (devDeps present, independent of the prod image).
-                // A test failure fails the build before Deploy.
-                sh '''
-                    docker run --rm --volumes-from jenkins -w "$PWD" node:20-bookworm-slim bash -lc '
-                        corepack enable &&
-                        corepack prepare pnpm@9 --activate &&
-                        pnpm install --frozen-lockfile &&
-                        pnpm exec nx test blog
-                    '
-                '''
-            }
-        }
+        // Tests run at pre-commit (.githooks: nx run-many -t test) — see cms Jenkinsfile note.
 
         stage('Deploy') {
             steps {
@@ -135,7 +120,7 @@ pipeline {
                         # Blocking health gate: retry until 200 or fail the build
                         ok=0
                         for i in \$(seq 1 30); do
-                            if curl -fsS http://localhost:3001/ >/dev/null; then
+                            if curl -fsS https://${DOMAIN}/ >/dev/null; then
                                 ok=1
                                 break
                             fi
