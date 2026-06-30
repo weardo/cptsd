@@ -41,6 +41,30 @@ cd cptsd-cms && pnpm test
 
 Every bug fix must include a test that fails before the fix and passes after.
 
+## Migrations Discipline (MANDATORY)
+
+The DB is MongoDB (Mongoose models in `libs/db`), so there is no schema-migration
+tool — which makes the *discipline* the only safeguard. Every schema change is
+**additive + grandfathering**, never a rename-in-place:
+
+- **Expand → migrate → contract.** Add the new field alongside the old; backfill;
+  dual-write while code still reads the old; switch reads to the new (still
+  dual-writing); only then stop writing/reading the old. At no point does live
+  code read a field that running data lacks.
+- **Grandfather existing documents.** New required fields must tolerate `undefined`
+  on old docs (default in the model or guard at read), never assume backfill ran.
+- **Renames are expand-contract, not `$rename`.** Add new, dual-write, migrate
+  readers, drop old — so a rollback to the previous image never hits missing data.
+- Adopt a versioned migration tool (Atlas) only when a change can't be made safely
+  additive; until then it's YAGNI.
+
+## Release Workflow
+
+Deploys use sha-pinned artifacts + a manifest, not `:latest`. See `RELEASE.md`:
+`manifest/<env>.lock` is the deployed-truth record; `bin/{current,pin,deploy,promote}`
+drive it; rollback = re-pin a prior sha + `bin/deploy` (no rebuild). `bin/promote`
+is dry-run by default.
+
 ## Development Workflow (AIDD Pipeline)
 
 Spec-first, TDD-based feature development with context resets between planning and implementation.
