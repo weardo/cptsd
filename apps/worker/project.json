@@ -19,6 +19,10 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": { "command": "tsc --noEmit", "cwd": "apps/worker" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "jest", "cwd": "apps/worker" }
     }
   }
 }

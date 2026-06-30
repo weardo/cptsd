@@ -6,6 +6,10 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": { "command": "tsc --noEmit", "cwd": "libs/pets" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "jest", "cwd": "libs/pets" }
     }
   }
 }

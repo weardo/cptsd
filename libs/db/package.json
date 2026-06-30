@@ -11,13 +11,17 @@
     "./mongodb": "./src/mongodb.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "mongoose": "^8.19.4"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.5",
     "typescript": "^5"
   }
 }

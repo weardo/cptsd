@@ -40,6 +40,22 @@ build and runs the prebuilt `unit:<sha>` image. **Rollback only works while that
 still exists on the box** — don't aggressively `docker image prune`. If it's gone, the
 job fails loudly (rebuild that commit instead).
 
+## Test gate
+
+Every unit has an `nx test` target (jest). Two enforcement points:
+
+- **Local (per clone, enable once):** `git config core.hooksPath .githooks`
+  — the committed `.githooks/pre-commit` runs `nx run-many -t type-check test build`
+  (Nx-cached). `SKIP_BUILD=1` skips the slow build leg; `SKIP_PRE_COMMIT=1` skips all.
+- **CI (blocking):** the main/cms/blog Jenkins `Test` stage runs `nx test <unit>` in a
+  node container against the checked-out workspace and **fails the build before Deploy**.
+  Skipped on `DEPLOY_SHA` redeploys (rollback of an already-tested artifact).
+
+```bash
+pnpm exec nx run-many -t test      # all units
+pnpm exec nx test cms              # one unit
+```
+
 ## Units
 
 | Unit | Jenkins job | Deploy |

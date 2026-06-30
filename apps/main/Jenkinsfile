@@ -27,6 +27,11 @@ pipeline {
                     def requested = (params.DEPLOY_SHA ?: '').trim()
                     env.SHA = requested ? requested : env.GIT_COMMIT.take(7)
                     env.REDEPLOY = requested ? 'true' : 'false'
+                    // Validate before SHA ever reaches a shell — a hex-only value
+                    // cannot inject commands regardless of how it is expanded.
+                    if (!(env.SHA ==~ /^[a-f0-9]{7,40}$/)) {
+                        error("DEPLOY_SHA must be a 7-40 char hex git sha (got '${env.SHA}')")
+                    }
                     echo "Version: main:${env.SHA} (redeploy=${env.REDEPLOY})"
                 }
             }
@@ -48,7 +53,7 @@ pipeline {
                                 --network=host \\
                                 --build-arg MONGODB_URI=\${MONGODB_URI:-} \\
                                 -f Dockerfile \\
-                                -t main:${env.SHA} \\
+                                -t "main:\${SHA}" \\
                                 -t main:latest \\
                                 ..
                         """
@@ -61,13 +66,30 @@ pipeline {
             when { expression { env.REDEPLOY == 'true' } }
             steps {
                 sh """
-                    if ! docker image inspect main:${env.SHA} >/dev/null 2>&1; then
-                        echo "Image main:${env.SHA} not found on this host — cannot redeploy a pruned artifact."
+                    if ! docker image inspect "main:\${SHA}" >/dev/null 2>&1; then
+                        echo "Image main:\${SHA} not found on this host — cannot redeploy a pruned artifact."
                         echo "Re-run a normal build of that commit, or pick a sha whose image still exists."
                         exit 1
                     fi
-                    echo "Reusing prebuilt image main:${env.SHA}"
+                    echo "Reusing prebuilt image main:\${SHA}"
                 """
+            }
+        }
+
+        stage('Test') {
+            when { expression { env.REDEPLOY == 'false' } }
+            steps {
+                // BLOCKING: run the unit's Nx tests in a node container against the
+                // checked-out workspace (devDeps present, independent of the prod image).
+                // A test failure fails the build before Deploy.
+                sh '''
+                    docker run --rm -v "$PWD":/repo -w /repo node:20-bookworm-slim bash -lc '
+                        corepack enable &&
+                        corepack prepare pnpm@9 --activate &&
+                        pnpm install --frozen-lockfile &&
+                        pnpm exec nx test main
+                    '
+                '''
             }
         }
 
@@ -100,7 +122,7 @@ pipeline {
                             --tmpfs /tmp \\
                             --tmpfs /app/.next/cache \\
                             --restart always \\
-                            main:${env.SHA}
+                            "main:\${SHA}"
 
                         sleep 20
                         docker ps --filter name=main-app

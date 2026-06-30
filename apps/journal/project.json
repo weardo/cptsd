@@ -12,6 +12,10 @@
       "executor": "nx:run-commands",
       "options": { "command": "next dev -p 3003", "cwd": "apps/journal" }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "jest", "cwd": "apps/journal" }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": { "command": "eslint .", "cwd": "apps/journal" }

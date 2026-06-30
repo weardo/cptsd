@@ -30,6 +30,11 @@ pipeline {
                     def requested = (params.DEPLOY_SHA ?: '').trim()
                     env.SHA = requested ? requested : env.GIT_COMMIT.take(7)
                     env.REDEPLOY = requested ? 'true' : 'false'
+                    // Validate before SHA ever reaches a shell — a hex-only value
+                    // cannot inject commands regardless of how it is expanded.
+                    if (!(env.SHA ==~ /^[a-f0-9]{7,40}$/)) {
+                        error("DEPLOY_SHA must be a 7-40 char hex git sha (got '${env.SHA}')")
+                    }
                     echo "Version: blog:${env.SHA} (redeploy=${env.REDEPLOY})"
                 }
             }
@@ -71,13 +76,17 @@ pipeline {
         stage('Test') {
             when { expression { env.REDEPLOY == 'false' } }
             steps {
-                dir('apps/blog') {
-                    script {
-                        echo 'Running tests...'
-                        // Single-quoted: shell expands $SHA / $DOCKER_COMPOSE_FILE from the Jenkins env.
-                        sh 'BLOG_IMAGE=blog:${SHA} docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."'
-                    }
-                }
+                // BLOCKING: run the unit's Nx tests in a node container against the
+                // checked-out workspace (devDeps present, independent of the prod image).
+                // A test failure fails the build before Deploy.
+                sh '''
+                    docker run --rm -v "$PWD":/repo -w /repo node:20-bookworm-slim bash -lc '
+                        corepack enable &&
+                        corepack prepare pnpm@9 --activate &&
+                        pnpm install --frozen-lockfile &&
+                        pnpm exec nx test blog
+                    '
+                '''
             }
         }
 

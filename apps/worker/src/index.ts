@@ -9,17 +9,11 @@ import {
 } from '@cptsd/db';
 import { createAIAdapter, PROMPT_VERSION } from '@cptsd/ai';
 import mongoose from 'mongoose';
+import { getBackoffDelay } from './backoff';
 
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const POLL_INTERVAL_MS = 5000; // 5 seconds
 const MAX_RETRIES = 3;
-
-/**
- * Exponential backoff delay calculation
- */
-function getBackoffDelay(attempts: number): number {
-  return Math.min(1000 * Math.pow(2, attempts), 300000); // Max 5 minutes
-}
 
 /**
  * Claim a job atomically

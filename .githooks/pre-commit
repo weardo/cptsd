@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Committed pre-commit gate (version-controlled, unlike .git/hooks).
+# Enable once per clone:  git config core.hooksPath .githooks
+#
+# Runs the Nx type-check + test gate (and build) so broken code can't be
+# committed. Nx caching keeps repeat runs fast.
+#   SKIP_PRE_COMMIT=1  skip everything
+#   SKIP_BUILD=1       skip the slow build leg (type-check + test still run)
+set -euo pipefail
+
+if [ "${SKIP_PRE_COMMIT:-}" = "1" ]; then
+  echo "⏭️  pre-commit gate skipped (SKIP_PRE_COMMIT=1)"
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "🔍 type-check (all projects)…"
+pnpm exec nx run-many -t type-check
+
+echo "🧪 test (all projects)…"
+pnpm exec nx run-many -t test
+
+if [ "${SKIP_BUILD:-}" != "1" ]; then
+  echo "📦 build (all projects)…"
+  pnpm exec nx run-many -t build
+else
+  echo "⏭️  build skipped (SKIP_BUILD=1)"
+fi
+
+echo "✅ pre-commit gate passed"
