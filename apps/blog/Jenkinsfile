@@ -51,7 +51,7 @@ pipeline {
 
                             # Build the app image (compose tags it blog:latest via the image: field),
                             # then tag the immutable short-sha for pinning/rollback.
-                            docker-compose -f ${DOCKER_COMPOSE_FILE} build app
+                            docker compose -f ${DOCKER_COMPOSE_FILE} build app
                             docker tag blog:latest blog:\${SHA}
                         """
                     }
@@ -111,16 +111,16 @@ pipeline {
                         export BLOG_IMAGE=blog:\${SHA}
 
                         echo "Stopping existing containers..."
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down --remove-orphans || true
+                        docker compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down --remove-orphans || true
 
                         echo "Removing any orphaned containers..."
                         docker rm -f blog-app-1 2>/dev/null || true
 
                         # Start services using the pinned prebuilt image (no rebuild here).
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d --no-build
+                        docker compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d --no-build
 
                         sleep 30
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} ps
+                        docker compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} ps
                     """
                 }
             }
@@ -158,7 +158,7 @@ pipeline {
         }
         failure {
             echo "${APP_NAME} deployment to ${DOMAIN} failed!"
-            sh 'docker-compose -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_FILE} -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_PROD_FILE} logs --tail=50'
+            sh 'docker compose -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_FILE} -f ${DEPLOY_PATH}/${DOCKER_COMPOSE_PROD_FILE} logs --tail=50'
         }
         always {
             cleanWs()
