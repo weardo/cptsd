@@ -142,11 +142,16 @@ volumes:
   # Local volumes use server's 40GB storage (included, no extra cost)
   # For $4/month CX23: 40GB is sufficient for MongoDB + MinIO initially
   # Consider Hetzner Cloud Volumes later if you grow beyond 30GB data
+  # Pin to the existing prod volume names so the apps/cms (project "cms")
+  # rename keeps mounting the original data instead of creating empty volumes.
   mongodb_data:
+    name: cptsd-cms_mongodb_data
     driver: local
   mongodb_config:
+    name: cptsd-cms_mongodb_config
     driver: local
   minio_data:
+    name: cptsd-cms_minio_data
     driver: local
 
 networks:
