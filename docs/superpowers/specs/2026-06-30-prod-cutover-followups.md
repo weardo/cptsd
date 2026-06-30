@@ -55,15 +55,26 @@ target name to match.
   needed) — new Jenkins deploys keep the same container names on `cptsd_net`, which gerbil/Traefik
   resolve by DNS.
 
-### ⚠️ The next Jenkins deploy is the FIRST real Docker build of the new Dockerfiles
+### Jenkins CI/CD — VALIDATED end-to-end 2026-07-01
 
-The cutover **reused the existing prod images** (the app code is identical; only file paths moved),
-so `apps/{cms,main}/Dockerfile` have not yet been built by Docker. The next normal Jenkins run will:
-build the new Dockerfile → run `nx test` in a node container → `compose down`/`docker run` the new
-image. The build and test gates run **before** the destructive deploy step, so a build/test failure
-leaves the current containers serving. **Trigger that first Jenkins deploy attended**, and if the new
-image fails to come up healthy, roll back by re-running with the retagged old image
-(`cms:latest`/`main:latest` still point at the working images) or restore the old container.
+The attended first deploy is done. cms (`#73`) and main (`#39`) both build the new Dockerfiles,
+deploy, and pass the health check — now running freshly Jenkins-built images (`cms:048d635`,
+`main:c0b791d`), data intact, all domains green. Fixing it surfaced **six pre-existing CI breakages**
+(none caused by the restructure), all now fixed in the Jenkinsfiles/Dockerfiles:
+
+1. `docker-compose` v1 calls → `docker compose` v2 (box dropped v1 ~3 months ago).
+2. Jenkins container had **no compose plugin** — installed v2 at
+   `/usr/local/lib/docker/cli-plugins/docker-compose` in the jenkins container (NOT in the
+   jenkins_home volume, so a jenkins **container recreation** loses it — reinstall or bake into an image).
+3. Dockerfiles didn't `COPY tsconfig.base.json` → `next build` failed on the `extends`. Added to cms/blog/main.
+4. main/journal Dockerfiles **flattened** `apps/X`→`/app`, breaking the extends + libs paths. main
+   rewritten to the nested layout (journal not deployed — fix it the same way before deploying journal).
+5. Test stage used `--volumes-from jenkins` (exposed docker socket + secrets → privilege escalation).
+   **Removed**; tests run at pre-commit. Re-add CI tests as a Dockerfile `--target test` if wanted.
+6. Health check curled `localhost:PORT` (DinD: jenkins localhost ≠ host) → now `https://${DOMAIN}/`.
+
+Rollback if ever needed: old images are still tagged (`cms:latest`/`main:latest` were retagged to the
+prior working images before these rebuilds overwrote them — re-pull/rebuild a known-good commit).
 
 Optional: replace the `blog.cptsd.in`→main proxy with a proper 301 redirect to `https://cptsd.in/blog`
 (Traefik redirect middleware) instead of serving the main site at the blog host.
