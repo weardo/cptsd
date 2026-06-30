@@ -1,0 +1,118 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME = 'cptsd-main'
+        DEPLOY_PATH = '/opt/main'
+        DOMAIN = 'cptsd.in'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    sh 'rm -rf * .* || true'
+                }
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('apps/main') {
+                    script {
+                        echo "Building ${APP_NAME} Docker image..."
+                        sh """
+                            echo "MONGODB_URI: \${MONGODB_URI:+SET}"
+
+                            # Build with --network=host so the Next.js build can reach
+                            # Google Fonts (required by next/font/google in layout.tsx)
+                            DOCKER_BUILDKIT=0 docker build \\
+                                --network=host \\
+                                --build-arg MONGODB_URI=\${MONGODB_URI:-} \\
+                                -f Dockerfile \\
+                                -t main:latest \\
+                                ..
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    echo "Deploying ${APP_NAME} to ${DOMAIN}..."
+                    sh """
+                        # Write env file for production container
+                        mkdir -p ${DEPLOY_PATH}
+                        printf 'MONGODB_URI=%s\\n' "\${MONGODB_URI:-}" > ${DEPLOY_PATH}/.env
+
+                        # Stop any existing container(s) on port 3002
+                        docker rm -f main-app 2>/dev/null || true
+                        # Also remove any other container that might hold port 3002
+                        docker ps -q --filter publish=3002 | xargs -r docker rm -f || true
+                        # Kill any non-Docker process on port 3002 (e.g. dev server)
+                        fuser -k 3002/tcp 2>/dev/null || true
+                        sleep 2
+
+                        # Start production container
+                        docker run -d \\
+                            --name main-app \\
+                            --network cptsd_net \\
+                            -p 3002:3002 \\
+                            -e NODE_ENV=production \\
+                            -e NEXT_TELEMETRY_DISABLED=1 \\
+                            -e MONGODB_URI=\${MONGODB_URI:-} \\
+                            --read-only \\
+                            --tmpfs /tmp \\
+                            --tmpfs /app/.next/cache \\
+                            --restart always \\
+                            main:latest
+
+                        sleep 20
+                        docker ps --filter name=main-app
+                    """
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    echo "Performing health check for ${DOMAIN}..."
+                    sh """
+                        sleep 10
+                        # Blocking health gate: retry until 200 or fail the build
+                        ok=0
+                        for i in \$(seq 1 30); do
+                            if curl -fsS http://localhost:3002/ >/dev/null; then
+                                ok=1
+                                break
+                            fi
+                            sleep 2
+                        done
+                        if [ "\$ok" -ne 1 ]; then
+                            echo "Health check failed after retries"
+                            exit 1
+                        fi
+                        echo "Health check passed"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "${APP_NAME} deployment to ${DOMAIN} successful!"
+        }
+        failure {
+            echo "${APP_NAME} deployment to ${DOMAIN} failed!"
+            sh 'docker logs main-app --tail=50 2>/dev/null || true'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

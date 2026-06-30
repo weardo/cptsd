@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@cptsd/db": ["libs/db/src/index.ts"],
+      "@cptsd/db/*": ["libs/db/src/*"],
+      "@cptsd/pets": ["libs/pets/src/index.ts"],
+      "@cptsd/pets/*": ["libs/pets/src/*"],
+      "@cptsd/ai": ["libs/ai/src/index.ts"],
+      "@cptsd/ai/*": ["libs/ai/src/*"]
+    }
+  }
+}

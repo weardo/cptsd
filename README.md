@@ -1,14 +1,14 @@
 # CPTSD Applications
 
 This repository contains two Next.js applications:
-- **cptsd-cms**: Content Management System (hosted at `cms.cptsd.in`)
-- **cptsd-blog-public**: Public blog application (hosted at `blog.cptsd.in`)
+- **apps/cms**: Content Management System (hosted at `cms.cptsd.in`)
+- **apps/blog**: Public blog application (hosted at `blog.cptsd.in`)
 
 ## Repository Structure
 
 ```
 cptsd/
-├── cptsd-cms/          # CMS application
+├── apps/cms/           # CMS application
 │   ├── app/            # Next.js app directory
 │   ├── components/     # React components
 │   ├── lib/            # Utility libraries
@@ -17,7 +17,7 @@ cptsd/
 │   ├── docker-compose.yml
 │   └── Jenkinsfile     # CI/CD pipeline
 │
-├── cptsd-blog-public/  # Blog public application
+├── apps/blog/          # Blog public application
 │   ├── lib/            # Utility libraries
 │   ├── models/         # MongoDB models
 │   ├── Dockerfile      # Docker image definition
@@ -87,7 +87,7 @@ git push -u origin main
    - Pipeline definition: Pipeline script from SCM
    - SCM: Git
    - Repository URL: Your GitHub repository URL
-   - Script Path: `cptsd-cms/Jenkinsfile`
+   - Script Path: `apps/cms/Jenkinsfile`
    - Branch: `*/main` (or `*/master`)
 
 #### For Blog Application
@@ -97,7 +97,7 @@ git push -u origin main
    - Pipeline definition: Pipeline script from SCM
    - SCM: Git
    - Repository URL: Your GitHub repository URL
-   - Script Path: `cptsd-blog-public/Jenkinsfile`
+   - Script Path: `apps/blog/Jenkinsfile`
    - Branch: `*/main` (or `*/master`)
 
 ### GitHub Webhook (Optional)
@@ -114,14 +114,14 @@ git push -u origin main
 ### CMS Application
 
 ```bash
-cd /opt/cptsd-cms
+cd /opt/cms
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 ### Blog Application
 
 ```bash
-cd /opt/cptsd-blog-public
+cd /opt/blog
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
@@ -129,7 +129,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 Each application requires a `.env` file in its deployment directory:
 
-### CMS (`/opt/cptsd-cms/.env`)
+### CMS (`/opt/cms/.env`)
 
 ```env
 MONGODB_URI=mongodb://admin:password@mongodb:27017/cptsd-cms?authSource=admin
@@ -144,7 +144,7 @@ NEXTAUTH_URL=https://cms.cptsd.in
 NEXTAUTH_SECRET=...
 ```
 
-### Blog (`/opt/cptsd-blog-public/.env`)
+### Blog (`/opt/blog/.env`)
 
 ```env
 MONGODB_URI=mongodb://admin:password@mongodb:27017/cptsd-cms?authSource=admin
@@ -162,10 +162,10 @@ MONGODB_URI=mongodb://admin:password@mongodb:27017/cptsd-cms?authSource=admin
 
 ```bash
 # CMS
-cd /opt/cptsd-cms && docker-compose ps
+cd /opt/cms && docker-compose ps
 
 # Blog
-cd /opt/cptsd-blog-public && docker-compose ps
+cd /opt/blog && docker-compose ps
 
 # Jenkins
 docker ps | grep jenkins
@@ -175,10 +175,10 @@ docker ps | grep jenkins
 
 ```bash
 # CMS
-cd /opt/cptsd-cms && docker-compose logs -f
+cd /opt/cms && docker-compose logs -f
 
 # Blog
-cd /opt/cptsd-blog-public && docker-compose logs -f
+cd /opt/blog && docker-compose logs -f
 
 # Jenkins
 docker logs -f jenkins
@@ -188,10 +188,10 @@ docker logs -f jenkins
 
 ```bash
 # CMS
-cd /opt/cptsd-cms && docker-compose restart
+cd /opt/cms && docker-compose restart
 
 # Blog
-cd /opt/cptsd-blog-public && docker-compose restart
+cd /opt/blog && docker-compose restart
 ```
 
 ## Troubleshooting
@@ -214,7 +214,7 @@ docker exec jenkins docker ps
 Check Jenkins console output and application logs:
 ```bash
 docker logs jenkins
-cd /opt/cptsd-cms && docker-compose logs
+cd /opt/cms && docker-compose logs
 ```
 
 ## License

@@ -7,8 +7,8 @@ set -e
 JENKINS_DOMAIN="jenkins.cptsd.in"
 SERVER_IP="37.27.39.20"
 JENKINS_PATH="/opt/jenkins"
-CMS_PATH="/opt/cptsd-cms"
-BLOG_PATH="/opt/cptsd-blog-public"
+CMS_PATH="/opt/cms"
+BLOG_PATH="/opt/blog"
 
 echo "🔧 Setting up Jenkins at ${JENKINS_DOMAIN}..."
 
@@ -46,7 +46,7 @@ if [ ! -f docker-compose.jenkins.yml ]; then
 fi
 
 # Create network if it doesn't exist
-docker network create cptsd-cms_app-network 2>/dev/null || echo "Network already exists"
+docker network create cptsd_net 2>/dev/null || echo "Network already exists"
 
 # Start Jenkins
 if [ -f docker-compose.jenkins.yml ]; then
@@ -155,8 +155,8 @@ echo ""
 echo "   4. Install recommended plugins in Jenkins"
 echo ""
 echo "   5. Create Jenkins jobs:"
-echo "      - Create pipeline job for 'cptsd-cms' pointing to cptsd-cms/Jenkinsfile"
-echo "      - Create pipeline job for 'cptsd-blog-public' pointing to cptsd-blog-public/Jenkinsfile"
+echo "      - Create pipeline job for 'cptsd-cms' pointing to apps/cms/Jenkinsfile"
+echo "      - Create pipeline job for 'cptsd-blog-public' pointing to apps/blog/Jenkinsfile"
 echo ""
 echo "   6. Configure GitHub webhook (optional):"
 echo "      - In GitHub repo settings, add webhook:"

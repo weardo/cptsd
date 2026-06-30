@@ -1,0 +1,15 @@
+{
+  "name": "cptsd",
+  "private": true,
+  "packageManager": "pnpm@9.1.4",
+  "scripts": {
+    "build": "nx run-many -t build",
+    "test": "nx run-many -t test",
+    "lint": "nx run-many -t lint",
+    "type-check": "nx run-many -t type-check"
+  },
+  "devDependencies": {
+    "nx": "23.0.1",
+    "typescript": "^5"
+  }
+}

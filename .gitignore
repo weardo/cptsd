@@ -71,3 +71,6 @@ logs/
 *.tar
 *.zip
 *.tsbuildinfo
+
+# Nx cache
+.nx/

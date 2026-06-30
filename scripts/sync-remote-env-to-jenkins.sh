@@ -13,11 +13,11 @@ SERVER_USER="root"
 
 # Determine deployment path based on job name
 if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
-    DEPLOY_PATH="/opt/cptsd-blog-public"
-    APP_DIR="cptsd-blog-public"
+    DEPLOY_PATH="/opt/blog"
+    APP_DIR="apps/blog"
 else
-    DEPLOY_PATH="/opt/cptsd-cms"
-    APP_DIR="cptsd-cms"
+    DEPLOY_PATH="/opt/cms"
+    APP_DIR="apps/cms"
 fi
 
 ENV_FILE="$DEPLOY_PATH/.env"

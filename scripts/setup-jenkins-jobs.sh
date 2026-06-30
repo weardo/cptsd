@@ -225,8 +225,8 @@ EOF
 }
 
 # Create jobs
-create_job "cptsd-cms" "cptsd-cms/Jenkinsfile"
-create_job "cptsd-blog-public" "cptsd-blog-public/Jenkinsfile"
+create_job "cptsd-cms" "apps/cms/Jenkinsfile"
+create_job "cptsd-blog-public" "apps/blog/Jenkinsfile"
 
 echo ""
 echo "✅ Jenkins jobs created!"

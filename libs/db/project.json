@@ -1,0 +1,11 @@
+{
+  "name": "db",
+  "root": "libs/db",
+  "projectType": "library",
+  "targets": {
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit", "cwd": "libs/db" }
+    }
+  }
+}

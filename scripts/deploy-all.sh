@@ -63,18 +63,18 @@ deploy_app() {
 }
 
 # Deploy CMS
-deploy_app "cptsd-cms" "./cptsd-cms" "/opt/cptsd-cms"
+deploy_app "cptsd-cms" "./apps/cms" "/opt/cms"
 
 # Deploy Blog
-deploy_app "cptsd-blog-public" "./cptsd-blog-public" "/opt/cptsd-blog-public"
+deploy_app "cptsd-blog-public" "./apps/blog" "/opt/blog"
 
 echo -e "${GREEN}🎉 All deployments completed!${NC}"
 echo ""
 echo "📊 Check status:"
-echo "   CMS:   sudo docker-compose -f /opt/cptsd-cms/docker-compose.yml -f /opt/cptsd-cms/docker-compose.prod.yml ps"
-echo "   Blog:  sudo docker-compose -f /opt/cptsd-blog-public/docker-compose.yml -f /opt/cptsd-blog-public/docker-compose.prod.yml ps"
+echo "   CMS:   sudo docker-compose -f /opt/cms/docker-compose.yml -f /opt/cms/docker-compose.prod.yml ps"
+echo "   Blog:  sudo docker-compose -f /opt/blog/docker-compose.yml -f /opt/blog/docker-compose.prod.yml ps"
 echo ""
 echo "📝 View logs:"
-echo "   CMS:   sudo docker-compose -f /opt/cptsd-cms/docker-compose.yml -f /opt/cptsd-cms/docker-compose.prod.yml logs -f"
-echo "   Blog:  sudo docker-compose -f /opt/cptsd-blog-public/docker-compose.yml -f /opt/cptsd-blog-public/docker-compose.prod.yml logs -f"
+echo "   CMS:   sudo docker-compose -f /opt/cms/docker-compose.yml -f /opt/cms/docker-compose.prod.yml logs -f"
+echo "   Blog:  sudo docker-compose -f /opt/blog/docker-compose.yml -f /opt/blog/docker-compose.prod.yml logs -f"
 

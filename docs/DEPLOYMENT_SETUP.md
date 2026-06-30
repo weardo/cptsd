@@ -73,7 +73,7 @@ Click "Install without restart" then restart Jenkins.
      - Private Key: Enter your GitHub SSH private key
      - ID: `github-ssh-key`
    - **Branch Specifier**: `*/main`
-   - **Script Path**: `cptsd-cms/Jenkinsfile`
+   - **Script Path**: `apps/cms/Jenkinsfile`
 5. **Build Triggers**: Check ✅ **"GitHub hook trigger for GITScm polling"**
 6. Click **Save**
 
@@ -88,7 +88,7 @@ Click "Install without restart" then restart Jenkins.
    - **Repository URL**: `git@github.com:weardo/cptsd.git`
    - **Credentials**: Select `github-ssh-key` (created above)
    - **Branch Specifier**: `*/main`
-   - **Script Path**: `cptsd-blog-public/Jenkinsfile`
+   - **Script Path**: `apps/blog/Jenkinsfile`
 5. **Build Triggers**: Check ✅ **"GitHub hook trigger for GITScm polling"**
 6. Click **Save**
 
@@ -151,7 +151,7 @@ curl -I https://jenkins.cptsd.in
 
 Ensure these exist on the server:
 
-### `/opt/cptsd-cms/.env`
+### `/opt/cms/.env`
 ```env
 MONGODB_URI=mongodb://admin:password@mongodb:27017/cptsd-cms?authSource=admin
 S3_ENDPOINT=http://minio:9000
@@ -165,7 +165,7 @@ NEXTAUTH_URL=https://cms.cptsd.in
 NEXTAUTH_SECRET=...
 ```
 
-### `/opt/cptsd-blog-public/.env`
+### `/opt/blog/.env`
 ```env
 MONGODB_URI=mongodb://admin:password@mongodb:27017/cptsd-cms?authSource=admin
 ```

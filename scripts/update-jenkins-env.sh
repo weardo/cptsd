@@ -18,9 +18,9 @@ if [ -z "$ENV_FILE" ]; then
     
     # Determine which app directory to check based on job name
     if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
-        APP_DIR="cptsd-blog-public"
+        APP_DIR="apps/blog"
     else
-        APP_DIR="cptsd-cms"
+        APP_DIR="apps/cms"
     fi
     
     if [ -f "$REPO_ROOT/$APP_DIR/.env.local" ]; then
@@ -96,7 +96,7 @@ if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
     echo "   The Jenkinsfile will check for environment variables in this order:"
     echo "   1. .env.local in checked-out repository (cptsd-blog-public/.env.local)"
     echo "   2. .env in checked-out repository (cptsd-blog-public/.env)"
-    echo "   3. .env in deployment directory (/opt/cptsd-blog-public/.env)"
+    echo "   3. .env in deployment directory (/opt/blog/.env)"
     echo "   4. Jenkins environment variables (if configured in job)"
     echo ""
     echo "   Required environment variables:"
@@ -105,7 +105,7 @@ else
     echo "   The Jenkinsfile will check for environment variables in this order:"
     echo "   1. .env.local in checked-out repository (cptsd-cms/.env.local)"
     echo "   2. .env in checked-out repository (cptsd-cms/.env)"
-    echo "   3. .env in deployment directory (/opt/cptsd-cms/.env)"
+    echo "   3. .env in deployment directory (/opt/cms/.env)"
     echo "   4. Jenkins environment variables (if configured in job)"
     echo ""
     echo "   Required environment variables:"
@@ -124,10 +124,10 @@ echo ""
 echo "💡 Next steps:"
 if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
     echo "   1. Ensure your .env or .env.local file is committed to the repository"
-    echo "      OR place it at /opt/cptsd-blog-public/.env on the server"
+    echo "      OR place it at /opt/blog/.env on the server"
 else
     echo "   1. Ensure your .env or .env.local file is committed to the repository"
-    echo "      OR place it at /opt/cptsd-cms/.env on the server"
+    echo "      OR place it at /opt/cms/.env on the server"
 fi
 echo ""
 echo "   2. If you want to use Jenkins credentials instead:"

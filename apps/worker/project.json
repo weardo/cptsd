@@ -1,0 +1,24 @@
+{
+  "name": "worker",
+  "root": "apps/worker",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc", "cwd": "apps/worker" },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsx watch src/index.ts", "cwd": "apps/worker" }
+    },
+    "serve-prod": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node dist/index.js", "cwd": "apps/worker" }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit", "cwd": "apps/worker" }
+    }
+  }
+}

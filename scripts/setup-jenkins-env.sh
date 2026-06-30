@@ -17,9 +17,9 @@ if [ -z "$ENV_FILE" ]; then
     
     # Determine which app directory to check based on job name
     if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
-        APP_DIR="cptsd-blog-public"
+        APP_DIR="apps/blog"
     else
-        APP_DIR="cptsd-cms"
+        APP_DIR="apps/cms"
     fi
     
     if [ -f "$REPO_ROOT/$APP_DIR/.env.local" ]; then
@@ -43,9 +43,9 @@ if [ -z "$ENV_FILE" ] || [ ! -f "$ENV_FILE" ]; then
     echo ""
     # Determine app directory based on job name
     if [ "$JOB_NAME" = "cptsd-blog-public" ]; then
-        APP_DIR="cptsd-blog-public"
+        APP_DIR="apps/blog"
     else
-        APP_DIR="cptsd-cms"
+        APP_DIR="apps/cms"
     fi
     
     echo "Or place .env or .env.local in:"

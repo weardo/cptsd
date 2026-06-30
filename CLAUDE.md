@@ -6,14 +6,14 @@ Multi-service monorepo for CPTSD mental health resources: public blog, CMS, main
 
 | Component | Technology | Location |
 |-----------|-----------|----------|
-| Main App | Next.js, React 19, TypeScript, Tailwind | `cptsd-main/` (port 3002) |
-| Public Blog | Next.js, React 19, TypeScript, Tailwind | `cptsd-blog-public/` (port 3001) |
-| CMS | Next.js, TypeScript, AWS S3 | `cptsd-cms/` (port 3000) |
-| Journal App | Next.js, TypeScript | `apps/cptsd-journal/` |
-| Worker | Node.js | `services/worker/` |
-| Shared DB | Mongoose/MongoDB | `packages/db/` |
-| Shared Pets | Shared package | `packages/pets/` |
-| Shared AI | AI utilities | `packages/ai/` |
+| Main App | Next.js, React 19, TypeScript, Tailwind | `apps/main/` (port 3002) |
+| Public Blog | Next.js, React 19, TypeScript, Tailwind | `apps/blog/` (port 3001) |
+| CMS | Next.js, TypeScript, AWS S3 | `apps/cms/` (port 3000) |
+| Journal App | Next.js, TypeScript | `apps/journal/` |
+| Worker | Node.js | `apps/worker/` |
+| Shared DB | Mongoose/MongoDB | `libs/db/` |
+| Shared Pets | Shared package | `libs/pets/` |
+| Shared AI | AI utilities | `libs/ai/` |
 | Deployment | Docker, docker-compose | Per-service Dockerfiles |
 
 ## Build & Run

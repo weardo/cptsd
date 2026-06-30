@@ -1,0 +1,82 @@
+# Multi-stage build for optimized production image
+FROM node:20-alpine AS base
+# Enable pnpm (workspace install replaces the old npm copy-hack symlink)
+RUN corepack enable
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy workspace manifests from apps/cms (+ root + the @cptsd/* libs it uses)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/cms/package.json ./apps/cms/
+COPY libs/db/package.json ./libs/db/
+# pnpm symlinks @cptsd/db into node_modules from the workspace (no copy-hack)
+RUN pnpm install --frozen-lockfile --filter ./apps/cms...
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+# Bring in the installed workspace (node_modules + manifests)
+COPY --from=deps /app/ ./
+# Copy app source
+COPY apps/cms/ ./apps/cms/
+# Copy shared database lib (raw TS source, consumed via transpilePackages)
+COPY libs/db ./libs/db
+
+# Accept build arguments for environment variables
+ARG OPENAI_API_KEY
+ARG MONGODB_URI
+ARG S3_ENDPOINT
+ARG S3_ACCESS_KEY_ID
+ARG S3_SECRET_ACCESS_KEY
+ARG S3_BUCKET_NAME
+ARG ADMIN_EMAIL
+ARG ADMIN_PASSWORD
+ARG NEXTAUTH_URL
+ARG NEXTAUTH_SECRET
+
+# Set environment variables for build (Next.js may need these during build)
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+ENV MONGODB_URI=${MONGODB_URI}
+ENV S3_ENDPOINT=${S3_ENDPOINT}
+ENV S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+ENV S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
+ENV S3_BUCKET_NAME=${S3_BUCKET_NAME}
+ENV ADMIN_EMAIL=${ADMIN_EMAIL}
+ENV ADMIN_PASSWORD=${ADMIN_PASSWORD}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+
+# Build Next.js application
+RUN pnpm --filter ./apps/cms run build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy necessary files from standalone build (monorepo layout: app lives at apps/cms)
+# Next standalone bundles the transpiled @cptsd/db source + node_modules, so no
+# runtime symlink/copy-hack is needed.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/cms/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/cms/.next/static ./apps/cms/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/cms/public ./apps/cms/public
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+# Next.js standalone creates server.js under the app path in the monorepo output
+CMD ["node", "apps/cms/server.js"]

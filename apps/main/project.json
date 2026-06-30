@@ -1,0 +1,11 @@
+{
+  "name": "main",
+  "root": "apps/main",
+  "projectType": "application",
+  "targets": {
+    "build":      { "executor": "nx:run-commands", "options": { "command": "next build", "cwd": "apps/main" }, "outputs": ["{projectRoot}/.next"] },
+    "serve":      { "executor": "nx:run-commands", "options": { "command": "next dev -p 3002", "cwd": "apps/main" } },
+    "lint":       { "executor": "nx:run-commands", "options": { "command": "eslint", "cwd": "apps/main" } },
+    "type-check": { "executor": "nx:run-commands", "options": { "command": "tsc --noEmit", "cwd": "apps/main" } }
+  }
+}

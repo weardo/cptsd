@@ -1,0 +1,11 @@
+{
+  "name": "pets",
+  "root": "libs/pets",
+  "projectType": "library",
+  "targets": {
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc --noEmit", "cwd": "libs/pets" }
+    }
+  }
+}
