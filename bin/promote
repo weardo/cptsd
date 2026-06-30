@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# bin/promote <feature-branch> [--apply] — squash-merge <feature> into main,
+# re-pin prod to the new main sha for AFFECTED units, tag the release, and push
+# main + tag (the push triggers the existing Jenkins webhook build/deploy of that
+# sha). Forward deploys go through the webhook here; use `bin/deploy` only to
+# redeploy/rollback to an already-built sha (DEPLOY_SHA, no rebuild).
+#
+# DEFAULT IS DRY-RUN. Pass --apply to actually mutate main + push.
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+branch="${1:-}"; mode="${2:---dry-run}"
+[ -n "$branch" ] || die "usage: bin/promote <feature-branch> [--apply]   (default: dry-run)"
+case "$mode" in
+  --apply)        apply=1 ;;
+  --dry-run|"")   apply=0 ;;
+  *)              die "unknown flag '$mode' (use --apply)" ;;
+esac
+
+cd "$REPO_ROOT"
+[ -z "$(git status --porcelain)" ] || die "working tree dirty — commit or stash first"
+git rev-parse --verify "$branch" >/dev/null 2>&1 || die "no such branch: $branch"
+
+# Affected units: those with changes under apps/<unit>/. Any libs/* change is
+# treated as affecting ALL apps (conservative — a shared lib can break any consumer).
+base="$(git merge-base main "$branch")"
+changed="$(git diff --name-only "$base" "$branch")"
+libs_changed=0
+printf '%s\n' "$changed" | grep -qE '^libs/' && libs_changed=1
+affected=()
+for u in $(list_units); do
+  if [ "$libs_changed" -eq 1 ] || printf '%s\n' "$changed" | grep -qE "^apps/${u}/"; then
+    affected+=("$u")
+  fi
+done
+[ "${#affected[@]}" -gt 0 ] || die "no deployable units affected by $branch"
+
+libs_note=""; [ "$libs_changed" -eq 1 ] && libs_note=" (libs changed -> all apps)"
+note "promote $branch -> main"
+note "affected units: ${affected[*]}${libs_note}"
+
+if [ "$apply" -eq 0 ]; then
+  cat >&2 <<EOF
+
+DRY-RUN — no changes made. With --apply this would:
+  1. git checkout main && git merge --squash $branch && git commit
+  2. pin prod [${affected[*]}] -> new main sha (manifest/prod.lock), commit
+  3. tag release/prod/$(date -u +%Y%m%d)-N
+  4. git push origin main --follow-tags   (webhook builds + deploys that sha)
+Rollback after release: bin/pin prod <unit> <prev-sha> && bin/deploy prod <unit>
+EOF
+  exit 0
+fi
+
+git checkout main
+git merge --squash "$branch" || die "squash merge hit conflicts — resolve manually, then re-run"
+git commit -m "promote: $branch"
+sha="$(norm_sha main)"
+for u in "${affected[@]}"; do set_pin prod "$u" "$sha"; done
+git add manifest/prod.lock
+git commit -m "release: pin prod ${affected[*]} -> $sha"
+
+n=1
+while git rev-parse -q --verify "refs/tags/release/prod/$(date -u +%Y%m%d)-$n" >/dev/null 2>&1; do
+  n=$((n+1))
+done
+tag="release/prod/$(date -u +%Y%m%d)-$n"
+git tag -a "$tag" -m "prod release $sha (${affected[*]})"
+
+git push origin main --follow-tags
+note "✓ promoted $branch -> main @ $sha, tagged $tag, pushed (webhook deploying)"
+note "  watch: bin/current prod   ·   rollback: bin/pin prod <unit> <prev-sha> && bin/deploy prod <unit>"

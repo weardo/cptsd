@@ -1,0 +1,10 @@
+# manifest/stage.lock — artifacts deployed in STAGE (source of truth).
+# Stage is a disposable environment you re-point at a chosen branch-set, never a
+# long-lived branch. Single-prod infra today: `bin/deploy stage` is wired but has
+# no distinct stage target until one exists (see docs/superpowers/specs release-manifest design §6).
+# Format: <unit> <short-sha>.
+main     f8109f4
+blog     f8109f4
+cms      f8109f4
+journal  f8109f4
+worker   f8109f4

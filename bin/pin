@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# bin/pin <env> <unit> <commit-ish> — record a unit's deployed sha in the manifest.
+# Local record only; does NOT deploy. Run `bin/deploy <env> <unit>` to apply.
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+env="${1:-}"; unit="${2:-}"; ref="${3:-}"
+[ -n "$env" ] && [ -n "$unit" ] && [ -n "$ref" ] \
+  || die "usage: bin/pin <prod|stage> <unit> <commit-ish>   (units: $(list_units))"
+
+is_unit "$unit" || die "unknown unit '$unit' (units: $(list_units))"
+sha="$(norm_sha "$ref")"          # validates the commit exists
+old="$(read_pin "$env" "$unit")"
+set_pin "$env" "$unit" "$sha"
+printf 'pinned %s %s: %s -> %s\n' "$env" "$unit" "${old:-<unset>}" "$sha"
+note "review: git diff -- $(manifest_path "$env")   then: bin/deploy $env $unit"

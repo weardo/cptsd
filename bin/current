@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# bin/current <env> — print what is deployed in <env> (prod|stage).
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+env="${1:-}"
+[ -n "$env" ] || die "usage: bin/current <prod|stage>"
+file="$(manifest_path "$env")"
+
+printf 'Deployed in %s (%s):\n' "$env" "$file"
+while read -r unit sha; do
+  job="$(unit_job "$unit" || echo '?')"
+  if [ "$job" = manual ]; then
+    printf '  %-8s %s  (manual deploy)\n' "$unit" "$sha"
+  else
+    printf '  %-8s %s  -> %s\n' "$unit" "$sha" "$job"
+  fi
+done < <(each_unit "$env")

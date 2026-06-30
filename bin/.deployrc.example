@@ -1,0 +1,6 @@
+# bin/.deployrc — host-only Jenkins credentials for bin/deploy + bin/promote.
+# Copy to bin/.deployrc (gitignored) on the machine that runs deploys and fill in.
+# NEVER commit the real file. Use a Jenkins API token, not a password.
+JENKINS_URL="http://127.0.0.1:8080"
+JENKINS_USER="your-jenkins-user"
+JENKINS_TOKEN="your-jenkins-api-token"

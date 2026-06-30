@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'DEPLOY_SHA', defaultValue: '', description: 'Redeploy a prebuilt sha image without rebuilding (rollback via bin/deploy). Empty = build the checked-out commit.')
+    }
+
     environment {
         APP_NAME = 'cptsd-main'
         DEPLOY_PATH = '/opt/main'
@@ -17,20 +21,34 @@ pipeline {
             }
         }
 
+        stage('Resolve version') {
+            steps {
+                script {
+                    def requested = (params.DEPLOY_SHA ?: '').trim()
+                    env.SHA = requested ? requested : env.GIT_COMMIT.take(7)
+                    env.REDEPLOY = requested ? 'true' : 'false'
+                    echo "Version: main:${env.SHA} (redeploy=${env.REDEPLOY})"
+                }
+            }
+        }
+
         stage('Build') {
+            when { expression { env.REDEPLOY == 'false' } }
             steps {
                 dir('apps/main') {
                     script {
-                        echo "Building ${APP_NAME} Docker image..."
+                        echo "Building ${APP_NAME} image main:${env.SHA}..."
                         sh """
                             echo "MONGODB_URI: \${MONGODB_URI:+SET}"
 
                             # Build with --network=host so the Next.js build can reach
-                            # Google Fonts (required by next/font/google in layout.tsx)
+                            # Google Fonts (required by next/font/google in layout.tsx).
+                            # Tag by immutable short-sha AND latest (the sha enables rollback).
                             DOCKER_BUILDKIT=0 docker build \\
                                 --network=host \\
                                 --build-arg MONGODB_URI=\${MONGODB_URI:-} \\
                                 -f Dockerfile \\
+                                -t main:${env.SHA} \\
                                 -t main:latest \\
                                 ..
                         """
@@ -39,10 +57,24 @@ pipeline {
             }
         }
 
+        stage('Verify image') {
+            when { expression { env.REDEPLOY == 'true' } }
+            steps {
+                sh """
+                    if ! docker image inspect main:${env.SHA} >/dev/null 2>&1; then
+                        echo "Image main:${env.SHA} not found on this host — cannot redeploy a pruned artifact."
+                        echo "Re-run a normal build of that commit, or pick a sha whose image still exists."
+                        exit 1
+                    fi
+                    echo "Reusing prebuilt image main:${env.SHA}"
+                """
+            }
+        }
+
         stage('Deploy') {
             steps {
                 script {
-                    echo "Deploying ${APP_NAME} to ${DOMAIN}..."
+                    echo "Deploying ${APP_NAME} (main:${env.SHA}) to ${DOMAIN}..."
                     sh """
                         # Write env file for production container
                         mkdir -p ${DEPLOY_PATH}
@@ -56,7 +88,7 @@ pipeline {
                         fuser -k 3002/tcp 2>/dev/null || true
                         sleep 2
 
-                        # Start production container
+                        # Start production container from the resolved sha image
                         docker run -d \\
                             --name main-app \\
                             --network cptsd_net \\
@@ -68,7 +100,7 @@ pipeline {
                             --tmpfs /tmp \\
                             --tmpfs /app/.next/cache \\
                             --restart always \\
-                            main:latest
+                            main:${env.SHA}
 
                         sleep 20
                         docker ps --filter name=main-app
@@ -105,7 +137,7 @@ pipeline {
 
     post {
         success {
-            echo "${APP_NAME} deployment to ${DOMAIN} successful!"
+            echo "${APP_NAME} deployment to ${DOMAIN} successful! (main:${env.SHA})"
         }
         failure {
             echo "${APP_NAME} deployment to ${DOMAIN} failed!"

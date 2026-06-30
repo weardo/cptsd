@@ -1,0 +1,9 @@
+# manifest/prod.lock — artifacts deployed in PRODUCTION (source of truth).
+# Format: <unit> <short-sha>.  Edit via bin/pin / bin/promote, not by hand in CI.
+# journal + worker are manual-deploy units (no Jenkins job yet); their sha is
+# still tracked here so prod-truth is complete.
+main     f8109f4
+blog     f8109f4
+cms      f8109f4
+journal  f8109f4
+worker   f8109f4

@@ -74,3 +74,6 @@ logs/
 
 # Nx cache
 .nx/
+
+# host-only deploy creds
+bin/.deployrc

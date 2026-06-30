@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# bin/deploy <env> [unit] — make <env> match manifest/<env>.lock by driving Jenkins
+# to each pinned sha (DEPLOY_SHA). With [unit], deploy just that one.
+# Manual units (journal/worker) print the exact box command instead of triggering CI.
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+env="${1:-}"; only="${2:-}"
+[ -n "$env" ] || die "usage: bin/deploy <prod|stage> [unit]"
+[ -z "$only" ] || is_unit "$only" || die "unknown unit '$only' (units: $(list_units))"
+
+manifest_path "$env" >/dev/null     # validates env
+
+rc=0
+while read -r unit sha; do
+  [ -z "$only" ] || [ "$only" = "$unit" ] || continue
+  job="$(unit_job "$unit")"
+  if [ "$job" = manual ]; then
+    cat >&2 <<EOF
+[$unit] manual deploy @ $sha — run on the box:
+    docker ps --filter name=${unit}-app   # confirm current
+    # rebuild/run ${unit} from commit $sha per apps/${unit} (compose), then verify
+EOF
+    continue
+  fi
+  printf '== deploy %s/%s @ %s ==\n' "$env" "$unit" "$sha"
+  if ! trigger_job "$job" "$sha"; then
+    rc=1
+    note "[$unit] deploy FAILED — stopping before remaining units to avoid a partial release"
+    break
+  fi
+done < <(each_unit "$env")
+
+if [ "$rc" -eq 0 ]; then
+  printf 'deploy %s complete.\n' "$env"
+else
+  die "deploy $env incomplete (see above)"
+fi

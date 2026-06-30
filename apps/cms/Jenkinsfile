@@ -1,22 +1,18 @@
 pipeline {
     agent any
-    
+
+    parameters {
+        string(name: 'DEPLOY_SHA', defaultValue: '', description: 'Redeploy a prebuilt sha image without rebuilding (rollback via bin/deploy). Empty = build the checked-out commit.')
+    }
+
     environment {
         APP_NAME = 'cptsd-cms'
         DEPLOY_PATH = '/opt/cms'
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         DOCKER_COMPOSE_PROD_FILE = 'docker-compose.prod.yml'
         DOMAIN = 'cms.cptsd.in'
-        
-        // Environment variables from Jenkins job configuration (if set)
-        // These will be used if .env files are not found
-        // To set these in Jenkins:
-        //   Option 1: Manage Jenkins → Configure System → Global properties → Environment variables
-        //   Option 2: Job → Configure → This project is parameterized → Add String Parameters
-        // These variables inherit from Jenkins global properties or job parameters
-        // If not set in Jenkins, they will default to empty string and be loaded from .env files
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -27,19 +23,26 @@ pipeline {
                 checkout scm
             }
         }
-        
+
+        stage('Resolve version') {
+            steps {
+                script {
+                    def requested = (params.DEPLOY_SHA ?: '').trim()
+                    env.SHA = requested ? requested : env.GIT_COMMIT.take(7)
+                    env.REDEPLOY = requested ? 'true' : 'false'
+                    echo "Version: cms:${env.SHA} (redeploy=${env.REDEPLOY})"
+                }
+            }
+        }
+
         stage('Build') {
+            when { expression { env.REDEPLOY == 'false' } }
             steps {
                 dir('apps/cms') {
                     script {
-                        echo "Building ${APP_NAME} Docker image..."
+                        echo "Building ${APP_NAME} image cms:${env.SHA}..."
                         sh """
-                            # Use environment variables from Jenkins Global Properties
-                            # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
-                            # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
-                            
-                            # Export environment variables for docker-compose build
-                            # Jenkins Global Properties are already available as environment variables
+                            # Jenkins Global Properties are already env vars; export for docker-compose build.
                             export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
                             export MONGODB_URI=\${MONGODB_URI:-}
                             export S3_ENDPOINT=\${S3_ENDPOINT:-}
@@ -50,59 +53,67 @@ pipeline {
                             export ADMIN_PASSWORD=\${ADMIN_PASSWORD:-}
                             export NEXTAUTH_URL=\${NEXTAUTH_URL:-}
                             export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
-                            
-                            # Show which variables are set (mask secrets)
+
                             echo "Environment variables check (from Jenkins Global Properties):"
                             echo "  OPENAI_API_KEY: \${OPENAI_API_KEY:+SET (hidden)}"
                             echo "  MONGODB_URI: \${MONGODB_URI:+SET}"
                             echo "  S3_ACCESS_KEY_ID: \${S3_ACCESS_KEY_ID:+SET (hidden)}"
                             echo "  ADMIN_EMAIL: \${ADMIN_EMAIL:+SET}"
                             echo "  NEXTAUTH_SECRET: \${NEXTAUTH_SECRET:+SET (hidden)}"
-                            
-                            # Build image once (will be reused in deploy stage)
+
+                            # Build the app image (compose tags it cms:latest via the image: field),
+                            # then tag the immutable short-sha for pinning/rollback.
                             docker-compose -f ${DOCKER_COMPOSE_FILE} build app
+                            docker tag cms:latest cms:\${SHA}
                         """
                     }
                 }
             }
         }
-        
+
+        stage('Verify image') {
+            when { expression { env.REDEPLOY == 'true' } }
+            steps {
+                sh """
+                    if ! docker image inspect cms:\${SHA} >/dev/null 2>&1; then
+                        echo "Image cms:\${SHA} not found on this host — cannot redeploy a pruned artifact."
+                        echo "Re-run a normal build of that commit, or pick a sha whose image still exists."
+                        exit 1
+                    fi
+                    echo "Reusing prebuilt image cms:\${SHA}"
+                """
+            }
+        }
+
         stage('Test') {
+            when { expression { env.REDEPLOY == 'false' } }
             steps {
                 dir('apps/cms') {
                     script {
                         echo 'Running tests...'
-                        sh '''
-                            docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."
-                        '''
+                        // Single-quoted: shell expands $SHA / $DOCKER_COMPOSE_FILE from the Jenkins env.
+                        sh 'CMS_IMAGE=cms:${SHA} docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."'
                     }
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 script {
-                    echo "Deploying ${APP_NAME} to ${DOMAIN}..."
+                    echo "Deploying ${APP_NAME} (cms:${env.SHA}) to ${DOMAIN}..."
                     sh """
                         # Copy files to deployment directory
                         mkdir -p ${DEPLOY_PATH}
                         cp -r apps/cms/* ${DEPLOY_PATH}/
-                        
-                        # Navigate to deployment directory
+
                         cd ${DEPLOY_PATH}
-                        
-                        # Pull latest code if using git
+
                         if [ -d .git ]; then
                             git pull origin main || git pull origin master || true
                         fi
-                        
-                        # Use environment variables from Jenkins Global Properties
-                        # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
-                        # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
-                        
-                        # Export environment variables for docker-compose
-                        # Jenkins Global Properties are already available as environment variables
+
+                        # Jenkins Global Properties are already env vars; export for docker-compose.
                         export OPENAI_API_KEY=\${OPENAI_API_KEY:-}
                         export MONGODB_URI=\${MONGODB_URI:-}
                         export S3_ENDPOINT=\${S3_ENDPOINT:-}
@@ -113,32 +124,26 @@ pipeline {
                         export ADMIN_PASSWORD=\${ADMIN_PASSWORD:-}
                         export NEXTAUTH_URL=\${NEXTAUTH_URL:-}
                         export NEXTAUTH_SECRET=\${NEXTAUTH_SECRET:-}
-                        
-                        # Stop and remove existing containers properly (including orphans)
+
+                        # Pin the exact artifact for this deploy (rollback-safe).
+                        export CMS_IMAGE=cms:\${SHA}
+
                         echo "Stopping existing containers..."
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down --remove-orphans || true
-                        
-                        # Force remove any containers with conflicting names
+
                         echo "Removing any orphaned containers..."
                         docker rm -f cms-app-1 cms-minio-1 cms-mongodb-1 2>/dev/null || true
-                        
-                        # The image was already built in the Build stage, so we don't rebuild here
-                        # Docker will use the existing image from the build stage
-                        echo "Using pre-built image from Build stage (no rebuild needed)..."
-                        
-                        # Start services (Docker will use the existing image)
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d
-                        
-                        # Wait for services to be healthy
+
+                        # Start services using the pinned prebuilt image (no rebuild here).
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d --no-build
+
                         sleep 30
-                        
-                        # Check service status
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} ps
                     """
                 }
             }
         }
-        
+
         stage('Health Check') {
             steps {
                 script {
@@ -164,10 +169,10 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
-            echo "${APP_NAME} deployment to ${DOMAIN} successful!"
+            echo "${APP_NAME} deployment to ${DOMAIN} successful! (cms:${env.SHA})"
         }
         failure {
             echo "${APP_NAME} deployment to ${DOMAIN} failed!"

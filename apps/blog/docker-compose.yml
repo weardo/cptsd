@@ -3,6 +3,9 @@ version: '3.8'
 services:
   # Next.js Blog Public Application
   app:
+    # Deterministic image name so deploys can pin/redeploy a specific sha.
+    # BLOG_IMAGE=blog:<sha> selects a prebuilt artifact (rollback) without rebuild.
+    image: ${BLOG_IMAGE:-blog:latest}
     build:
       context: ../../ # Build from repo root to include libs/db
       dockerfile: apps/blog/Dockerfile

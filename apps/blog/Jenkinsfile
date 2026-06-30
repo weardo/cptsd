@@ -1,22 +1,18 @@
 pipeline {
     agent any
-    
+
+    parameters {
+        string(name: 'DEPLOY_SHA', defaultValue: '', description: 'Redeploy a prebuilt sha image without rebuilding (rollback via bin/deploy). Empty = build the checked-out commit.')
+    }
+
     environment {
         APP_NAME = 'cptsd-blog-public'
         DEPLOY_PATH = '/opt/blog'
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         DOCKER_COMPOSE_PROD_FILE = 'docker-compose.prod.yml'
         DOMAIN = 'blog.cptsd.in'
-        
-        // Environment variables from Jenkins job configuration (if set)
-        // These will be used if .env files are not found
-        // To set these in Jenkins:
-        //   Option 1: Manage Jenkins → Configure System → Global properties → Environment variables
-        //   Option 2: Job → Configure → This project is parameterized → Add String Parameters
-        // These variables inherit from Jenkins global properties or job parameters
-        // If not set in Jenkins, they will default to empty string and be loaded from .env files
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -27,92 +23,100 @@ pipeline {
                 checkout scm
             }
         }
-        
+
+        stage('Resolve version') {
+            steps {
+                script {
+                    def requested = (params.DEPLOY_SHA ?: '').trim()
+                    env.SHA = requested ? requested : env.GIT_COMMIT.take(7)
+                    env.REDEPLOY = requested ? 'true' : 'false'
+                    echo "Version: blog:${env.SHA} (redeploy=${env.REDEPLOY})"
+                }
+            }
+        }
+
         stage('Build') {
+            when { expression { env.REDEPLOY == 'false' } }
             steps {
                 dir('apps/blog') {
                     script {
-                        echo "Building ${APP_NAME} Docker image..."
+                        echo "Building ${APP_NAME} image blog:${env.SHA}..."
                         sh """
-                            # Use environment variables from Jenkins Global Properties
-                            # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
-                            # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
-                            
-                            # Export environment variables for docker-compose build
-                            # Jenkins Global Properties are already available as environment variables
                             export MONGODB_URI=\${MONGODB_URI:-}
-                            
-                            # Build image once (will be reused in deploy stage)
+
+                            # Build the app image (compose tags it blog:latest via the image: field),
+                            # then tag the immutable short-sha for pinning/rollback.
                             docker-compose -f ${DOCKER_COMPOSE_FILE} build app
+                            docker tag blog:latest blog:\${SHA}
                         """
                     }
                 }
             }
         }
-        
+
+        stage('Verify image') {
+            when { expression { env.REDEPLOY == 'true' } }
+            steps {
+                sh """
+                    if ! docker image inspect blog:\${SHA} >/dev/null 2>&1; then
+                        echo "Image blog:\${SHA} not found on this host — cannot redeploy a pruned artifact."
+                        echo "Re-run a normal build of that commit, or pick a sha whose image still exists."
+                        exit 1
+                    fi
+                    echo "Reusing prebuilt image blog:\${SHA}"
+                """
+            }
+        }
+
         stage('Test') {
+            when { expression { env.REDEPLOY == 'false' } }
             steps {
                 dir('apps/blog') {
                     script {
                         echo 'Running tests...'
-                        sh '''
-                            docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."
-                        '''
+                        // Single-quoted: shell expands $SHA / $DOCKER_COMPOSE_FILE from the Jenkins env.
+                        sh 'BLOG_IMAGE=blog:${SHA} docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app npm test || echo "Tests failed but continuing..."'
                     }
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 script {
-                    echo "Deploying ${APP_NAME} to ${DOMAIN}..."
+                    echo "Deploying ${APP_NAME} (blog:${env.SHA}) to ${DOMAIN}..."
                     sh """
                         # Copy files to deployment directory
                         mkdir -p ${DEPLOY_PATH}
                         cp -r apps/blog/* ${DEPLOY_PATH}/
-                        
-                        # Navigate to deployment directory
+
                         cd ${DEPLOY_PATH}
-                        
-                        # Pull latest code if using git
+
                         if [ -d .git ]; then
                             git pull origin main || git pull origin master || true
                         fi
-                        
-                        # Use environment variables from Jenkins Global Properties
-                        # These are set via: Manage Jenkins → Configure System → Global properties → Environment variables
-                        # Variables are automatically available in Jenkins pipeline, just export them for docker-compose
-                        
-                        # Export environment variables for docker-compose
-                        # Jenkins Global Properties are already available as environment variables
+
                         export MONGODB_URI=\${MONGODB_URI:-}
-                        
-                        # Stop and remove existing containers properly (including orphans)
+
+                        # Pin the exact artifact for this deploy (rollback-safe).
+                        export BLOG_IMAGE=blog:\${SHA}
+
                         echo "Stopping existing containers..."
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} down --remove-orphans || true
-                        
-                        # Force remove any containers with conflicting names
+
                         echo "Removing any orphaned containers..."
                         docker rm -f blog-app-1 2>/dev/null || true
-                        
-                        # The image was already built in the Build stage, so we don't rebuild here
-                        # Docker will use the existing image from the build stage
-                        echo "Using pre-built image from Build stage (no rebuild needed)..."
-                        
-                        # Start services (Docker will use the existing image)
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d
-                        
-                        # Wait for services to be healthy
+
+                        # Start services using the pinned prebuilt image (no rebuild here).
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} up -d --no-build
+
                         sleep 30
-                        
-                        # Check service status
                         docker-compose -f ${DOCKER_COMPOSE_FILE} -f ${DOCKER_COMPOSE_PROD_FILE} ps
                     """
                 }
             }
         }
-        
+
         stage('Health Check') {
             steps {
                 script {
@@ -138,10 +142,10 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
-            echo "${APP_NAME} deployment to ${DOMAIN} successful!"
+            echo "${APP_NAME} deployment to ${DOMAIN} successful! (blog:${env.SHA})"
         }
         failure {
             echo "${APP_NAME} deployment to ${DOMAIN} failed!"
@@ -152,4 +156,3 @@ pipeline {
         }
     }
 }
-
