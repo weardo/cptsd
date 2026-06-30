@@ -97,7 +97,7 @@ pipeline {
                 // checked-out workspace (devDeps present, independent of the prod image).
                 // A test failure fails the build before Deploy.
                 sh '''
-                    docker run --rm -v "$PWD":/repo -w /repo node:20-bookworm-slim bash -lc '
+                    docker run --rm --volumes-from jenkins -w "$PWD" node:20-bookworm-slim bash -lc '
                         corepack enable &&
                         corepack prepare pnpm@9 --activate &&
                         pnpm install --frozen-lockfile &&
