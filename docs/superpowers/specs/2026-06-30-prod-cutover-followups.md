@@ -28,33 +28,45 @@ before the next deploy is safe.
 - Pangolin DB backups before each edit: `/root/pang-backup-*.sqlite`. To change a target, edit the
   `targets` row, restart `pangolin`, then **restart `traefik`** (it caches the resolved target).
 
-## ⚠️ Critical fragility — DO NOT redeploy via Jenkins until this is fixed
+## Routing stability — FIXED 2026-06-30 (name-based targets)
 
-Pangolin pins **container IPs**. Any redeploy that recreates `main-app`/`cms-app-1` will give it a
-new IP → Pangolin 502s the domain until its target is updated. Today's containers work because their
-IPs happen to match the targets; the **next** `docker run`/`compose up` will not.
+The original fragility (Pangolin pinned **container IPs**, so any redeploy that recreated an app
+shuffled its IP → 502) is resolved:
 
-**Fix (pick one) before re-enabling Jenkins deploys:**
-1. **Static IPs (recommended).** Give the proxy network an explicit subnet and assign each app a
-   fixed `ipv4_address` in its compose/`docker run`, matching the Pangolin target. Then every deploy
-   reuses the same IP and Pangolin never breaks. (Requires recreating `cptsd-cms_app-network` with a
-   subnet, or moving ingress onto `cptsd_net` with a subnet — coordinate with gerbil/jenkins which
-   also sit on that network.)
-2. **Post-deploy target sync.** Add a deploy step that reads the new container IP and updates the
-   Pangolin target (API or DB) + reloads Traefik. Brittle; prefer (1).
+- **Pangolin targets now use container NAMES, not IPs**: `cms.cptsd.in → cms-app-1:3000`,
+  `cptsd.in → main-app:3002`, `blog.cptsd.in → main-app:3002`. Traefik resolves these via Docker DNS.
+- **gerbil was connected to `cptsd_net`** (Traefik shares gerbil's net namespace), so name resolution
+  works on `cptsd_net` — where the new Jenkins deploys place the apps.
+- **Verified:** force-recreated `cms-app` (now on `cptsd_net` only, like a Jenkins deploy) → routing
+  self-healed with zero Pangolin changes (`cms.cptsd.in` stayed 307).
 
-## Jenkins / branch reconciliation (still TODO)
+Requirement that keeps this stable: the deploy must keep the **same container names** (`cms-app-1`
+from compose project `cms`; `main-app` from `docker run --name main-app`) on a network gerbil shares
+(`cptsd_net`). The new Jenkinsfiles already do this. If a unit is ever renamed, update its Pangolin
+target name to match.
 
-1. **Merge** `chore/nx-restructure-a` → `main` (the box is already running the new structure; main
-   should reflect it).
-2. **Update the 3 Jenkins jobs' Script Path** → `apps/cms/Jenkinsfile`, `apps/blog/Jenkinsfile`,
-   `apps/main/Jenkinsfile` (they still point at the old `cptsd-*/Jenkinsfile` paths). Jenkins UI or
-   `scripts/setup-jenkins-jobs.sh`.
-3. **Make the new Jenkinsfiles attach the proxy network + static IP** (per the fix above), or each CI
-   deploy will re-break Pangolin routing.
-4. **blog**: no Jenkins job needed — it is merged into main. Consider removing the `cptsd-blog-public`
-   job and, if desired, replacing the `blog.cptsd.in`→main proxy with a proper 301 redirect to
-   `https://cptsd.in/blog` (Traefik redirect middleware).
+## Jenkins / branch reconciliation (done 2026-06-30/07-01)
+
+- `chore/nx-restructure-a` merged → `main` and pushed (the branch was strictly ahead of
+  `origin/main` `bf57c84`, clean fast-forward).
+- Jenkins job Script Paths updated: `cptsd-cms` → `apps/cms/Jenkinsfile`, `cptsd-main` →
+  `apps/main/Jenkinsfile`. `cptsd-blog-public` **disabled** (blog merged into main).
+- Routing stability handled separately by the name-based Pangolin targets above (no static-IP work
+  needed) — new Jenkins deploys keep the same container names on `cptsd_net`, which gerbil/Traefik
+  resolve by DNS.
+
+### ⚠️ The next Jenkins deploy is the FIRST real Docker build of the new Dockerfiles
+
+The cutover **reused the existing prod images** (the app code is identical; only file paths moved),
+so `apps/{cms,main}/Dockerfile` have not yet been built by Docker. The next normal Jenkins run will:
+build the new Dockerfile → run `nx test` in a node container → `compose down`/`docker run` the new
+image. The build and test gates run **before** the destructive deploy step, so a build/test failure
+leaves the current containers serving. **Trigger that first Jenkins deploy attended**, and if the new
+image fails to come up healthy, roll back by re-running with the retagged old image
+(`cms:latest`/`main:latest` still point at the working images) or restore the old container.
+
+Optional: replace the `blog.cptsd.in`→main proxy with a proper 301 redirect to `https://cptsd.in/blog`
+(Traefik redirect middleware) instead of serving the main site at the blog host.
 
 ## Rollback (if needed)
 
