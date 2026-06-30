@@ -24,6 +24,8 @@ RUN pnpm install --no-frozen-lockfile
 COPY apps/blog ./apps/blog
 COPY libs/db ./libs/db
 COPY libs/pets ./libs/pets
+# Root base tsconfig that apps/blog/tsconfig.json extends (../../tsconfig.base.json)
+COPY tsconfig.base.json ./
 
 # Accept build arguments for environment variables
 ARG MONGODB_URI

@@ -24,6 +24,8 @@ COPY --from=deps /app/ ./
 COPY apps/cms/ ./apps/cms/
 # Copy shared database lib (raw TS source, consumed via transpilePackages)
 COPY libs/db ./libs/db
+# Root base tsconfig that each app's tsconfig.json extends (../../tsconfig.base.json)
+COPY tsconfig.base.json ./
 
 # Accept build arguments for environment variables
 ARG OPENAI_API_KEY
