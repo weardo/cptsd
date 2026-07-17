@@ -1,7 +1,4 @@
 name: Deploy to Oracle
-
-# Thin caller: deploy logic lives once in weardo/infra (reusable workflow).
-# cptsd is a monorepo (builds main + cms), so it uses script mode.
 on:
   push:
     branches: [main]
@@ -12,13 +9,28 @@ on:
       - "deploy/on-oracle.sh"
       - ".github/workflows/deploy-oracle.yml"
   workflow_dispatch:
-
+concurrency:
+  group: deploy-cptsd
+  cancel-in-progress: true
 jobs:
   deploy:
-    uses: weardo/infra/.github/workflows/deploy-oracle.yml@main
-    with:
-      app: cptsd
-      deploy_path: /opt/cptsd-repo
-      run_mode: script
-      deploy_script: deploy/on-oracle.sh
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.ORACLE_DEPLOY_KEY }}
+          HOST: ${{ secrets.ORACLE_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Sync + deploy main + cms on oracle-a
+        env:
+          HOST: ${{ secrets.ORACLE_HOST }}
+        run: |
+          rsync -az -e "ssh -i ~/.ssh/deploy" \
+            --exclude .git --exclude node_modules --exclude .next --exclude dist \
+            --exclude .env --exclude '*.env.production' \
+            ./ "ubuntu@$HOST:/opt/cptsd-repo/"
+          ssh -i ~/.ssh/deploy "ubuntu@$HOST" 'bash /opt/cptsd-repo/deploy/on-oracle.sh'
