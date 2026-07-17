@@ -13,7 +13,8 @@ build_args() {  # emit NUL-separated --build-arg KEY=VAL from an env file
 }
 
 deploy() {  # <app> <secrets.enc.env> <port>
-  local app="$1" enc="$2" port="$3" env="/tmp/$app.env"
+  local app="$1" enc="$2" port="$3"
+  local env="/tmp/$app.env"
   sops -d "$enc" > "$env"
   mapfile -d '' A < <(build_args "$env")
   echo "==> build $app"
