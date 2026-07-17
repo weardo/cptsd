@@ -1,0 +1,5 @@
+# SOPS config — encrypt any *.enc.env / *.enc.yaml / *.enc.json with this age key.
+# Decryption only needs the age PRIVATE key (in ~/.config/sops/age/keys.txt or $SOPS_AGE_KEY).
+creation_rules:
+  - path_regex: \.enc\.(env|ya?ml|json)$
+    age: "age1y0ge9ml7ew5eznc3t0x2m6svkjzt353ve997q26r77mw7utd8gtqgg0x56"
