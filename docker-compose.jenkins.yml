@@ -8,7 +8,7 @@ services:
     user: root
     ports:
       - '127.0.0.1:8080:8080'  # Only expose on localhost, use reverse proxy
-      - '50000:50000'
+      - '127.0.0.1:50000:50000'
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
